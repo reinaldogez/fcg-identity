@@ -1,6 +1,80 @@
-@FCG.API_HostAddress = http://localhost:5014
+@host = http://localhost:5014
 
-GET {{FCG.API_HostAddress}}/weatherforecast/
+### Cadastrar usuário (caso feliz — 201 Created)
+# @name cadastrarUsuario
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Reinaldo Teste",
+  "email": "reinaldo.teste@fcg.com",
+  "senha": "Senha@123"
+}
+
+### Obter usuário por ID (usa o Id da requisição anterior)
+GET {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
 Accept: application/json
 
-###
+### Obter usuário inexistente (404 Not Found)
+GET {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+### Cadastro com e-mail inválido (400 Bad Request)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Email Invalido",
+  "email": "nao-eh-email",
+  "senha": "Senha@123"
+}
+
+### Cadastro com senha fraca — menos de 8 caracteres (400 Bad Request)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Senha Curta",
+  "email": "senha.curta@fcg.com",
+  "senha": "Ab@1"
+}
+
+### Cadastro com senha sem caractere especial (400 Bad Request)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Sem Especial",
+  "email": "sem.especial@fcg.com",
+  "senha": "SenhaSimples1"
+}
+
+### Cadastro com senha sem dígito (400 Bad Request)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Sem Digito",
+  "email": "sem.digito@fcg.com",
+  "senha": "SenhaForte@"
+}
+
+### Cadastro com nome vazio (400 Bad Request)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "",
+  "email": "nome.vazio@fcg.com",
+  "senha": "Senha@123"
+}
+
+### Cadastro com e-mail duplicado (409 Conflict — execute depois do caso feliz)
+POST {{host}}/api/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Reinaldo Duplicado",
+  "email": "reinaldo.teste@fcg.com",
+  "senha": "Senha@123"
+}

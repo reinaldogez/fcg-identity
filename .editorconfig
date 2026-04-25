@@ -207,3 +207,9 @@ dotnet_naming_symbols.async_method_symbols.required_modifiers = async
 
 dotnet_naming_style.async_method_style.required_suffix = Async
 dotnet_naming_style.async_method_style.capitalization = pascal_case
+
+# ============================================================================
+# Test files — relax async suffix rule (test methods don't use Async suffix)
+# ============================================================================
+[tests/**/*.cs]
+dotnet_naming_rule.async_methods_should_end_with_async.severity = none
