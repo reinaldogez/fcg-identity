@@ -111,4 +111,124 @@ public class UsuarioTests
         acao.Should().Throw<DomainException>()
             .WithMessage("*nome*");
     }
+
+    [Fact]
+    public void DeveAlterarNomeEEmailQuandoDadosValidos()
+    {
+        var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
+        var novoEmail = Email.Criar("novo@email.com");
+
+        usuario.AlterarDados("Nome Novo", novoEmail);
+
+        usuario.Nome.Should().Be("Nome Novo");
+        usuario.Email.Should().Be(novoEmail);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void DeveRejeitarNomeVazioAoAlterarDados(string? nome)
+    {
+        var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
+        var novoEmail = Email.Criar("novo@email.com");
+
+        var acao = () => usuario.AlterarDados(nome!, novoEmail);
+
+        acao.Should().Throw<DomainException>().WithMessage("*nome*");
+    }
+
+    [Fact]
+    public void DeveRejeitarNomeAcimaDoTamanhoMaximoAoAlterarDados()
+    {
+        var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
+        var nome = new string('A', Usuario.NomeTamanhoMaximo + 1);
+
+        var acao = () => usuario.AlterarDados(nome, _emailValido);
+
+        acao.Should().Throw<DomainException>().WithMessage("*máximo*");
+    }
+
+    [Fact]
+    public void DeveRejeitarEmailNuloAoAlterarDados()
+    {
+        var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
+
+        var acao = () => usuario.AlterarDados("Nome Novo", null!);
+
+        acao.Should().Throw<DomainException>().WithMessage("*e-mail*");
+    }
+
+    [Fact]
+    public void DeveTrimarNomeAoAlterarDados()
+    {
+        var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
+
+        usuario.AlterarDados("  Nome Com Espaços  ", _emailValido);
+
+        usuario.Nome.Should().Be("Nome Com Espaços");
+    }
+
+    [Fact]
+    public void DeveAlterarSenhaHashQuandoNovoHashValido()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+        var novoHash = SenhaHash.Reconstituir("$2a$11$novoHashParaTestes");
+
+        usuario.AlterarSenha(novoHash);
+
+        usuario.SenhaHash.Should().Be(novoHash);
+    }
+
+    [Fact]
+    public void DeveMarcarUsuarioComoInativoAoDesativar()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+
+        usuario.Desativar();
+
+        usuario.Ativo.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeveSerIdempotenteAoDesativarUsuarioJaInativo()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+        usuario.Desativar();
+
+        var acao = () => usuario.Desativar();
+
+        acao.Should().NotThrow();
+        usuario.Ativo.Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeveAlterarTipoParaAdministrador()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+
+        usuario.AlterarTipo(TipoUsuario.Administrador);
+
+        usuario.Tipo.Should().Be(TipoUsuario.Administrador);
+    }
+
+    [Fact]
+    public void DeveAlterarTipoParaUsuarioComum()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+
+        usuario.AlterarTipo(TipoUsuario.Usuario);
+
+        usuario.Tipo.Should().Be(TipoUsuario.Usuario);
+    }
+
+    [Fact]
+    public void DeveRejeitarTipoInvalido()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+
+        var acao = () => usuario.AlterarTipo((TipoUsuario)99);
+
+        acao.Should().Throw<DomainException>();
+    }
 }

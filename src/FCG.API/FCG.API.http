@@ -1,4 +1,8 @@
-@host = http://localhost:5014
+@host = https://localhost:7222
+
+# ===========================================================================
+# CADASTRAR USUÁRIO
+# ===========================================================================
 
 ### Cadastrar usuário (caso feliz — 201 Created)
 # @name cadastrarUsuario
@@ -7,17 +11,9 @@ Content-Type: application/json
 
 {
   "nome": "Reinaldo Teste",
-  "email": "reinaldo.teste@fcg.com",
-  "senha": "Senha@123"
+  "email": "reinaldo2.teste@fcg.com",
+  "senha": "NovaSenha@4567"
 }
-
-### Obter usuário por ID (usa o Id da requisição anterior)
-GET {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
-Accept: application/json
-
-### Obter usuário inexistente (404 Not Found)
-GET {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
-Accept: application/json
 
 ### Cadastro com e-mail inválido (400 Bad Request)
 POST {{host}}/api/usuarios
@@ -77,4 +73,178 @@ Content-Type: application/json
   "nome": "Reinaldo Duplicado",
   "email": "reinaldo.teste@fcg.com",
   "senha": "Senha@123"
+}
+
+# ===========================================================================
+# OBTER USUÁRIO POR ID
+# ===========================================================================
+
+### Obter usuário por ID (usa o Id da requisição cadastrarUsuario)
+GET {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+Accept: application/json
+
+### Obter usuário inexistente (404 Not Found)
+GET {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Accept: application/json
+
+# ===========================================================================
+# LISTAR USUÁRIOS (paginado)
+# ===========================================================================
+
+### Listar usuários — página 1, 20 por página (padrão)
+GET {{host}}/api/usuarios
+Accept: application/json
+
+### Listar usuários — página 1, 2 por página
+GET {{host}}/api/usuarios?pagina=1&tamanhoPagina=2
+Accept: application/json
+
+### Listar usuários — página 2, 2 por página
+GET {{host}}/api/usuarios?pagina=2&tamanhoPagina=2
+Accept: application/json
+
+### Listar com página inválida (400 Bad Request)
+GET {{host}}/api/usuarios?pagina=0
+Accept: application/json
+
+### Listar com tamanho de página inválido (400 Bad Request)
+GET {{host}}/api/usuarios?tamanhoPagina=101
+Accept: application/json
+
+# ===========================================================================
+# ATUALIZAR USUÁRIO (nome e e-mail)
+# ===========================================================================
+
+### Atualizar nome e e-mail (caso feliz — 200 OK)
+PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+Content-Type: application/json
+
+{
+  "nome": "Reinaldo Atualizado",
+  "email": "reinaldo.atualizado@fcg.com"
+}
+
+### Atualizar com o mesmo e-mail (deve retornar 200 OK — sem conflito)
+PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+Content-Type: application/json
+
+{
+  "nome": "Reinaldo2 Atualizado",
+  "email": "reinaldo2.teste@fcg.com"
+}
+
+### Atualizar com e-mail inválido (400 Bad Request)
+PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+Content-Type: application/json
+
+{
+  "nome": "Nome Valido",
+  "email": "nao-eh-email"
+}
+
+### Atualizar com nome vazio (400 Bad Request)
+PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+Content-Type: application/json
+
+{
+  "nome": "",
+  "email": "reinaldo.teste@fcg.com"
+}
+
+### Atualizar usuário inexistente (404 Not Found)
+PUT {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Content-Type: application/json
+
+{
+  "nome": "Ninguem",
+  "email": "ninguem@fcg.com"
+}
+
+# ===========================================================================
+# ALTERAR SENHA
+# ===========================================================================
+
+### Alterar senha (caso feliz — 204 No Content)
+POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+Content-Type: application/json
+
+{
+  "senhaAtual": "NovaSenha@456",
+  "novaSenha": "NovaSenha@4567"
+}
+
+### Alterar senha com senha atual incorreta (400 Bad Request)
+POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+Content-Type: application/json
+
+{
+  "senhaAtual": "SenhaErrada@1",
+  "novaSenha": "NovaSenha@456"
+}
+
+### Alterar senha com nova senha fraca (400 Bad Request)
+POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+Content-Type: application/json
+
+{
+  "senhaAtual": "NovaSenha@4567",
+  "novaSenha": "fraca"
+}
+
+### Alterar senha de usuário inexistente (404 Not Found)
+POST {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/alterar-senha
+Content-Type: application/json
+
+{
+  "senhaAtual": "Senha@123",
+  "novaSenha": "NovaSenha@456"
+}
+
+# ===========================================================================
+# DESATIVAR USUÁRIO (soft delete — idempotente)
+# ===========================================================================
+
+### Desativar usuário (caso feliz — 204 No Content)
+PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/desativar
+
+### Desativar novamente — idempotente (204 No Content)
+PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/desativar
+
+### Desativar usuário inexistente (404 Not Found)
+PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/desativar
+
+# ===========================================================================
+# ALTERAR TIPO DE USUÁRIO
+# ===========================================================================
+
+### Promover a Administrador (200 OK)
+PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+Content-Type: application/json
+
+{
+  "tipo": "Administrador"
+}
+
+### Rebaixar para Usuário (200 OK)
+PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+Content-Type: application/json
+
+{
+  "tipo": "Usuario"
+}
+
+### Tipo inválido (400 Bad Request)
+PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+Content-Type: application/json
+
+{
+  "tipo": "Root"
+}
+
+### Alterar tipo de usuário inexistente (404 Not Found)
+PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/tipo
+Content-Type: application/json
+
+{
+  "tipo": "Administrador"
 }

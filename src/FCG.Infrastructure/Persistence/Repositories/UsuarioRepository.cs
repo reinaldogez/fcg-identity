@@ -33,4 +33,26 @@ public class UsuarioRepository(FcgDbContext contexto) : IUsuarioRepository
         return await contexto.Usuarios
             .AnyAsync(u => u.Email == email, cancellationToken);
     }
+
+    public void Atualizar(Usuario usuario)
+    {
+        contexto.Usuarios.Update(usuario);
+    }
+
+    public async Task<(IReadOnlyList<Usuario> Items, int Total)> ListarPaginadoAsync(
+        int pagina, int tamanhoPagina, CancellationToken cancellationToken = default)
+    {
+        var query = contexto.Usuarios
+            .AsNoTracking()
+            .OrderBy(u => u.DataCriacao);
+
+        int total = await query.CountAsync(cancellationToken);
+
+        var items = await query
+            .Skip((pagina - 1) * tamanhoPagina)
+            .Take(tamanhoPagina)
+            .ToListAsync(cancellationToken);
+
+        return (items, total);
+    }
 }

@@ -18,4 +18,19 @@ public class UsuarioDomainService(IUsuarioRepository repositorio) : IUsuarioDoma
 
         return Usuario.Criar(nome, email, senhaHash);
     }
+
+    public async Task AtualizarDadosAsync(
+        Usuario usuario, string novoNome, Email novoEmail,
+        CancellationToken cancellationToken = default)
+    {
+        if (usuario.Email != novoEmail)
+        {
+            if (await repositorio.ExisteComEmailAsync(novoEmail, cancellationToken))
+            {
+                throw new DomainConflictException("Já existe um usuário cadastrado com este e-mail.");
+            }
+        }
+
+        usuario.AlterarDados(novoNome, novoEmail);
+    }
 }

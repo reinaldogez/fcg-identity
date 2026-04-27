@@ -28,7 +28,8 @@ builder.Services.AddRateLimiter(options =>
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
 builder.Services.AddDbContext<FcgDbContext>(options =>
     options.UseSqlServer(connectionString));
 
@@ -38,6 +39,11 @@ builder.Services.AddScoped<IUsuarioDomainService, UsuarioDomainService>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgDbContext>());
 builder.Services.AddScoped<CadastrarUsuarioUseCase>();
 builder.Services.AddScoped<ObterUsuarioPorIdUseCase>();
+builder.Services.AddScoped<ListarUsuariosUseCase>();
+builder.Services.AddScoped<AtualizarUsuarioUseCase>();
+builder.Services.AddScoped<AlterarSenhaUseCase>();
+builder.Services.AddScoped<DesativarUsuarioUseCase>();
+builder.Services.AddScoped<AlterarTipoUsuarioUseCase>();
 builder.Services.AddHostedService<AdminSeedService>();
 
 var app = builder.Build();
