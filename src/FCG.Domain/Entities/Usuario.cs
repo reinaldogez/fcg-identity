@@ -66,6 +66,21 @@ public class Usuario
         Tipo = novoTipo;
     }
 
+    public void AlterarTipoSolicitadoPor(TipoUsuario novoTipo, Guid solicitanteId)
+    {
+        if (!Enum.IsDefined(novoTipo))
+            throw new DomainException("Tipo de usuário inválido.");
+
+        if (solicitanteId == Id
+            && Tipo == TipoUsuario.Administrador
+            && novoTipo != TipoUsuario.Administrador)
+        {
+            throw new DomainException("Um administrador não pode rebaixar a si mesmo.");
+        }
+
+        Tipo = novoTipo;
+    }
+
     private static string ValidarNome(string nome)
     {
         if (string.IsNullOrWhiteSpace(nome))

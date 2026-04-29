@@ -1,0 +1,336 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http.Json;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
+using FCG.Application.DTOs;
+using FCG.Application.Interfaces;
+using FCG.Domain.Entities;
+using FCG.Domain.ValueObjects;
+using FCG.Infrastructure.Persistence;
+using FCG.Tests.Integration.Fixtures;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+
+namespace FCG.Tests.Integration.Api;
+
+public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
+{
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private const string EmailUsuario = "login@fcg.com";
+    private const string SenhaUsuario = "Senha@123";
+    private const string NomeUsuario = "Usuario Login";
+
+    private readonly FcgApiFactory _factory;
+    private readonly HttpClient _client;
+
+    public AuthEndpointsTests(FcgApiFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            AllowAutoRedirect = false
+        });
+    }
+
+    public Task InitializeAsync() => _factory.ResetarBancoAsync();
+
+    public Task DisposeAsync() => Task.CompletedTask;
+
+    [Fact]
+    public async Task DeveRetornar200ELoginResponseComAccessTokenQuandoCredenciaisValidas()
+    {
+        await CadastrarUsuarioAsync();
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
+        body.Should().NotBeNull();
+        body!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        body.TokenType.Should().Be("Bearer");
+        body.ExpiresIn.Should().BePositive();
+        body.RefreshToken.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public async Task DeveRetornar401QuandoEmailNaoCadastrado()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest("inexistente@fcg.com", SenhaUsuario));
+
+        await AssertRespostaCredenciaisInvalidasAsync(resposta);
+    }
+
+    [Fact]
+    public async Task DeveRetornar401QuandoSenhaIncorreta()
+    {
+        await CadastrarUsuarioAsync();
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(EmailUsuario, "Errada@123"));
+
+        await AssertRespostaCredenciaisInvalidasAsync(resposta);
+    }
+
+    [Fact]
+    public async Task DeveRetornar401QuandoUsuarioDesativado()
+    {
+        await CadastrarUsuarioAsync();
+        await DesativarUsuarioNoBancoAsync(EmailUsuario);
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario));
+
+        await AssertRespostaCredenciaisInvalidasAsync(resposta);
+    }
+
+    [Fact]
+    public async Task DeveRetornar401QuandoEmailMalFormatado()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest("nao-eh-email", SenhaUsuario));
+
+        await AssertRespostaCredenciaisInvalidasAsync(resposta);
+    }
+
+    [Fact]
+    public async Task DeveRetornar401ComMesmaMensagemParaTodasAsFalhas()
+    {
+        await CadastrarUsuarioAsync();
+
+        var respostas = new[]
+        {
+            await _client.PostAsJsonAsync("/api/auth/login",
+                new LoginRequest("inexistente@fcg.com", SenhaUsuario)),
+            await _client.PostAsJsonAsync("/api/auth/login",
+                new LoginRequest(EmailUsuario, "Errada@123")),
+            await _client.PostAsJsonAsync("/api/auth/login",
+                new LoginRequest("formato-invalido", SenhaUsuario))
+        };
+
+        foreach (var resposta in respostas)
+        {
+            resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
+            erro!.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+        }
+    }
+
+    [Fact]
+    public async Task DeveRetornarTokenJwtValido()
+    {
+        await CadastrarUsuarioAsync();
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario));
+        var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
+
+        var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
+        var parametros = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = FcgApiFactory.TestIssuer,
+            ValidateAudience = true,
+            ValidAudience = FcgApiFactory.TestAudience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(FcgApiFactory.TestSigningKey)),
+            ClockSkew = TimeSpan.FromSeconds(5)
+        };
+
+        var principal = handler.ValidateToken(body!.AccessToken, parametros, out _);
+
+        principal.FindFirstValue(JwtRegisteredClaimNames.Email).Should().Be(EmailUsuario);
+        principal.FindFirstValue(ClaimTypes.Role).Should().Be("Usuario");
+    }
+
+    // --- /refresh ---
+
+    [Fact]
+    public async Task DeveTrocarRefreshPorNovoParEEmitirNovoRefresh()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
+        body!.AccessToken.Should().NotBeNullOrWhiteSpace();
+        body.RefreshToken.Should().NotBeNullOrWhiteSpace();
+        body.RefreshToken.Should().NotBe(login.RefreshToken);
+    }
+
+    [Fact]
+    public async Task DeveRejeitarRefreshTokenJaUsado()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+        var primeira = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+        primeira.EnsureSuccessStatusCode();
+
+        var segunda = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+
+        segunda.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeveRejeitarRefreshTokenInexistente()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest("token-que-nao-existe"));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
+        erro!.Errors[0].Should().Be("Refresh token inválido.");
+    }
+
+    [Fact]
+    public async Task DeveRejeitarRefreshQuandoUsuarioFoiDesativado()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+        await DesativarUsuarioNoBancoAsync(EmailUsuario);
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeveRejeitarRefreshTokenExpirado()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+        await ExpirarRefreshTokenNoBancoAsync(login.RefreshToken!);
+
+        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
+        erro!.Errors[0].Should().Be("Refresh token inválido.");
+    }
+
+    // --- /logout ---
+
+    [Fact]
+    public async Task DeveRevogarRefreshTokenERetornar204NoLogout()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+
+        var logout = await _client.PostAsJsonAsync("/api/auth/logout",
+            new LogoutRequest(login.RefreshToken!));
+
+        logout.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var refresh = await _client.PostAsJsonAsync("/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!));
+        refresh.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeveRetornar204NoLogoutComTokenInexistente()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/auth/logout",
+            new LogoutRequest("token-que-nao-existe"));
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DeveSerIdempotenteAoChamarLogoutDuasVezes()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+        await _client.PostAsJsonAsync("/api/auth/logout", new LogoutRequest(login.RefreshToken!));
+
+        var segunda = await _client.PostAsJsonAsync("/api/auth/logout",
+            new LogoutRequest(login.RefreshToken!));
+
+        segunda.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DevePersistirRefreshTokenComoHashSha256ENaoPlaintext()
+    {
+        await CadastrarUsuarioAsync();
+        LoginResponse login = await LoginAsync();
+
+        using var scope = _factory.Services.CreateScope();
+        var contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        var jwt = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+
+        string hashEsperado = jwt.CalcularHashRefreshToken(login.RefreshToken!);
+
+        RefreshToken persistido = await contexto.RefreshTokens.SingleAsync();
+        persistido.TokenHash.Should().Be(hashEsperado);
+        persistido.TokenHash.Should().NotBe(login.RefreshToken);
+        persistido.TokenHash.Length.Should().Be(64);
+    }
+
+    private async Task<LoginResponse> LoginAsync()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario));
+        resposta.EnsureSuccessStatusCode();
+        return (await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions))!;
+    }
+
+    private async Task CadastrarUsuarioAsync()
+    {
+        var resposta = await _client.PostAsJsonAsync("/api/usuarios",
+            new CadastrarUsuarioRequest(NomeUsuario, EmailUsuario, SenhaUsuario));
+        resposta.EnsureSuccessStatusCode();
+    }
+
+    private async Task DesativarUsuarioNoBancoAsync(string email)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        var emailVo = Email.Criar(email);
+        Usuario usuario = await contexto.Usuarios.SingleAsync(u => u.Email == emailVo);
+        usuario.Desativar();
+        await contexto.SaveChangesAsync();
+    }
+
+    private async Task ExpirarRefreshTokenNoBancoAsync(string plaintext)
+    {
+        using var scope = _factory.Services.CreateScope();
+        var contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        var jwt = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
+        string hash = jwt.CalcularHashRefreshToken(plaintext);
+        DateTime passado = DateTime.UtcNow.AddDays(-1);
+        await contexto.RefreshTokens
+            .Where(rt => rt.TokenHash == hash)
+            .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.ExpiraEm, passado));
+    }
+
+    private static async Task AssertRespostaCredenciaisInvalidasAsync(HttpResponseMessage resposta)
+    {
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
+        erro.Should().NotBeNull();
+        erro!.Type.Should().Be("ErroDeAutenticacao");
+        erro.Status.Should().Be(401);
+        erro.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+    }
+
+    private sealed record RespostaErro(string Type, string Title, int Status, List<string> Errors);
+}

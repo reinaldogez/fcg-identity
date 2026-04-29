@@ -156,6 +156,36 @@ public class ErrorHandlingMiddlewareTests
     }
 
     [Fact]
+    public async Task DeveMapearDomainAuthExceptionParaStatus401()
+    {
+        HttpContext context = await InvocarMiddlewareComExcecaoAsync(
+            new DomainAuthException("Credenciais inválidas."));
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeveCapturarDomainAuthExceptionAntesDeDomainException()
+    {
+        HttpContext context = await InvocarMiddlewareComExcecaoAsync(
+            new DomainAuthException("Credenciais inválidas."));
+
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        context.Response.StatusCode.Should().NotBe(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact]
+    public async Task DeveRetornarProblemDetailsComTipoErroDeAutenticacaoParaDomainAuthException()
+    {
+        JsonElement body = await InvocarECapturarBodyAsync(
+            new DomainAuthException("Credenciais inválidas."));
+
+        body.GetProperty("type").GetString().Should().Be("ErroDeAutenticacao");
+        body.GetProperty("status").GetInt32().Should().Be(401);
+        body.GetProperty("errors")[0].GetString().Should().Be("Credenciais inválidas.");
+    }
+
+    [Fact]
     public async Task DeveDeixarRespostaIntactaQuandoNaoHaExcecao()
     {
         DefaultHttpContext context = new();

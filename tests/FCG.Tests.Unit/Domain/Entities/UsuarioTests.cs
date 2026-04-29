@@ -231,4 +231,56 @@ public class UsuarioTests
 
         acao.Should().Throw<DomainException>();
     }
+
+    [Fact]
+    public void NaoDevePermitirAdministradorRebaixarASiMesmo()
+    {
+        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+
+        var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, admin.Id);
+
+        acao.Should().Throw<DomainException>().WithMessage("*rebaixar a si mesmo*");
+    }
+
+    [Fact]
+    public void DevePermitirAdministradorRebaixarOutroAdministrador()
+    {
+        var alvo = Usuario.Criar("Outro", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var solicitanteId = Guid.NewGuid();
+
+        alvo.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, solicitanteId);
+
+        alvo.Tipo.Should().Be(TipoUsuario.Usuario);
+    }
+
+    [Fact]
+    public void DevePermitirAdministradorPromoverASiMesmoQuandoTipoIgual()
+    {
+        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+
+        var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Administrador, admin.Id);
+
+        acao.Should().NotThrow();
+        admin.Tipo.Should().Be(TipoUsuario.Administrador);
+    }
+
+    [Fact]
+    public void DevePermitirUsuarioComumPromoverASiMesmoSemRestricao()
+    {
+        var usuario = Usuario.Criar("Comum", _emailValido, _senhaHashValida);
+
+        usuario.AlterarTipoSolicitadoPor(TipoUsuario.Administrador, usuario.Id);
+
+        usuario.Tipo.Should().Be(TipoUsuario.Administrador);
+    }
+
+    [Fact]
+    public void DeveRejeitarAlterarTipoSolicitadoPorComTipoInvalido()
+    {
+        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+
+        var acao = () => admin.AlterarTipoSolicitadoPor((TipoUsuario)99, Guid.NewGuid());
+
+        acao.Should().Throw<DomainException>().WithMessage("*Tipo*");
+    }
 }

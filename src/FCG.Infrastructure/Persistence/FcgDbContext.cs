@@ -7,6 +7,7 @@ namespace FCG.Infrastructure.Persistence;
 public class FcgDbContext(DbContextOptions<FcgDbContext> options) : DbContext(options), IUnitOfWork
 {
     public DbSet<Usuario> Usuarios => Set<Usuario>();
+    public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

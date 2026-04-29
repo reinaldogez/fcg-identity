@@ -1,7 +1,62 @@
 @host = https://localhost:7222
+@adminEmail = admin@fcg.com
+@adminSenha = TROCAR-PELA-SENHA-DO-SEED
 
 # ===========================================================================
-# CADASTRAR USUÁRIO
+# AUTENTICAÇÃO — execute antes dos endpoints protegidos
+# ===========================================================================
+
+### Login do admin (200 OK) — captura accessToken e refreshToken para os próximos blocos
+# @name loginAdmin
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "senha": "{{adminSenha}}"
+}
+
+###
+
+@adminToken = {{loginAdmin.response.body.accessToken}}
+@adminRefreshToken = {{loginAdmin.response.body.refreshToken}}
+
+### Login com credenciais inválidas (401 Unauthorized)
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "senha": "errada"
+}
+
+### Refresh do access token (200 OK) — refresh token antigo é revogado e substituído
+# @name refreshAdmin
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+### Tentar refresh com token já revogado (401 Unauthorized)
+POST {{host}}/api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{adminRefreshToken}}"
+}
+
+### Logout — revoga o refresh token atual (204 No Content)
+POST {{host}}/api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshAdmin.response.body.refreshToken}}"
+}
+
+# ===========================================================================
+# CADASTRAR USUÁRIO (público)
 # ===========================================================================
 
 ### Cadastrar usuário (caso feliz — 201 Created)
@@ -10,10 +65,28 @@ POST {{host}}/api/usuarios
 Content-Type: application/json
 
 {
-  "nome": "Reinaldo Teste",
-  "email": "reinaldo2.teste@fcg.com",
+  "nome": "Reinaldo 3",
+  "email": "reinaldo3@gmail.com",
   "senha": "NovaSenha@4567"
 }
+
+###
+
+@usuarioId = {{cadastrarUsuario.response.body.id}}
+
+### Login do usuário recém-criado (200 OK) — captura token do "dono"
+# @name loginUsuario
+POST {{host}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "reinaldo3@gmail.com",
+  "senha": "NovaSenha@4567"
+}
+
+###
+
+@usuarioToken = {{loginUsuario.response.body.accessToken}}
 
 ### Cadastro com e-mail inválido (400 Bad Request)
 POST {{host}}/api/usuarios
@@ -71,52 +144,104 @@ Content-Type: application/json
 
 {
   "nome": "Reinaldo Duplicado",
-  "email": "reinaldo.teste@fcg.com",
+  "email": "reinaldo2.teste@fcg.com",
   "senha": "Senha@123"
 }
 
 # ===========================================================================
-# OBTER USUÁRIO POR ID
+# OBTER USUÁRIO POR ID (OwnerOrAdmin — próprio dono ou Administrador)
 # ===========================================================================
 
-### Obter usuário por ID (usa o Id da requisição cadastrarUsuario)
-GET {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+### Obter sem token (401 Unauthorized)
+GET {{host}}/api/usuarios/{{usuarioId}}
 Accept: application/json
 
-### Obter usuário inexistente (404 Not Found)
+### Obter com token de outro usuário comum (403 Forbidden)
+# Para reproduzir: cadastre um segundo usuário, faça login com ele e use o token aqui.
+GET {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer TOKEN-DE-OUTRO-USUARIO-COMUM
+Accept: application/json
+
+### Obter próprio perfil como dono (200 OK)
+GET {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer {{usuarioToken}}
+Accept: application/json
+
+### Obter qualquer usuário como admin (200 OK)
+GET {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Obter usuário inexistente como admin (404 Not Found)
 GET {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 # ===========================================================================
-# LISTAR USUÁRIOS (paginado)
+# LISTAR USUÁRIOS (somente Administrador)
 # ===========================================================================
 
-### Listar usuários — página 1, 20 por página (padrão)
+### Listar sem token (401 Unauthorized)
 GET {{host}}/api/usuarios
 Accept: application/json
 
-### Listar usuários — página 1, 2 por página
-GET {{host}}/api/usuarios?pagina=1&tamanhoPagina=2
+### Listar como usuário comum (403 Forbidden)
+GET {{host}}/api/usuarios
+Authorization: Bearer {{usuarioToken}}
 Accept: application/json
 
-### Listar usuários — página 2, 2 por página
+### Listar como admin — página 1, 20 por página (padrão)
+GET {{host}}/api/usuarios
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Listar como admin — página 1, 2 por página
+GET {{host}}/api/usuarios?pagina=1&tamanhoPagina=2
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Listar como admin — página 2, 2 por página
 GET {{host}}/api/usuarios?pagina=2&tamanhoPagina=2
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 ### Listar com página inválida (400 Bad Request)
 GET {{host}}/api/usuarios?pagina=0
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 ### Listar com tamanho de página inválido (400 Bad Request)
 GET {{host}}/api/usuarios?tamanhoPagina=101
+Authorization: Bearer {{adminToken}}
 Accept: application/json
 
 # ===========================================================================
-# ATUALIZAR USUÁRIO (nome e e-mail)
+# ATUALIZAR USUÁRIO — OwnerOrAdmin (próprio dono ou Administrador)
 # ===========================================================================
 
-### Atualizar nome e e-mail (caso feliz — 200 OK)
-PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+### Atualizar sem token (401 Unauthorized)
+PUT {{host}}/api/usuarios/{{usuarioId}}
+Content-Type: application/json
+
+{
+  "nome": "Tentativa Sem Auth",
+  "email": "sem.auth@fcg.com"
+}
+
+### Atualizar com token de OUTRO usuário comum (403 Forbidden — esperado)
+# Para reproduzir: cadastre um segundo usuário, faça login com ele e use o token aqui.
+PUT {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer TOKEN-DE-OUTRO-USUARIO-COMUM
+Content-Type: application/json
+
+{
+  "nome": "Tentativa Cross-User",
+  "email": "cross.user@fcg.com"
+}
+
+### Atualizar próprios dados como dono (200 OK)
+PUT {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer {{usuarioToken}}
 Content-Type: application/json
 
 {
@@ -124,17 +249,19 @@ Content-Type: application/json
   "email": "reinaldo.atualizado@fcg.com"
 }
 
-### Atualizar com o mesmo e-mail (deve retornar 200 OK — sem conflito)
-PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+### Atualizar como admin (200 OK)
+PUT {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
-  "nome": "Reinaldo2 Atualizado",
-  "email": "reinaldo2.teste@fcg.com"
+  "nome": "Renomeado pelo admin",
+  "email": "renomeado@fcg.com"
 }
 
 ### Atualizar com e-mail inválido (400 Bad Request)
-PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
+PUT {{host}}/api/usuarios/{{usuarioId}}
+Authorization: Bearer {{usuarioToken}}
 Content-Type: application/json
 
 {
@@ -142,17 +269,9 @@ Content-Type: application/json
   "email": "nao-eh-email"
 }
 
-### Atualizar com nome vazio (400 Bad Request)
-PUT {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}
-Content-Type: application/json
-
-{
-  "nome": "",
-  "email": "reinaldo.teste@fcg.com"
-}
-
-### Atualizar usuário inexistente (404 Not Found)
+### Atualizar usuário inexistente como admin (404 Not Found)
 PUT {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
@@ -161,20 +280,31 @@ Content-Type: application/json
 }
 
 # ===========================================================================
-# ALTERAR SENHA
+# ALTERAR SENHA — OwnerOrAdmin
 # ===========================================================================
 
-### Alterar senha (caso feliz — 204 No Content)
-POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+### Alterar senha sem token (401 Unauthorized)
+POST {{host}}/api/usuarios/{{usuarioId}}/alterar-senha
 Content-Type: application/json
 
 {
-  "senhaAtual": "NovaSenha@456",
-  "novaSenha": "NovaSenha@4567"
+  "senhaAtual": "NovaSenha@4567",
+  "novaSenha": "OutraSenha@1234"
+}
+
+### Alterar própria senha (caso feliz — 204 No Content)
+POST {{host}}/api/usuarios/{{usuarioId}}/alterar-senha
+Authorization: Bearer {{usuarioToken}}
+Content-Type: application/json
+
+{
+  "senhaAtual": "NovaSenha@4567",
+  "novaSenha": "OutraSenha@1234"
 }
 
 ### Alterar senha com senha atual incorreta (400 Bad Request)
-POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+POST {{host}}/api/usuarios/{{usuarioId}}/alterar-senha
+Authorization: Bearer {{usuarioToken}}
 Content-Type: application/json
 
 {
@@ -183,16 +313,18 @@ Content-Type: application/json
 }
 
 ### Alterar senha com nova senha fraca (400 Bad Request)
-POST {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/alterar-senha
+POST {{host}}/api/usuarios/{{usuarioId}}/alterar-senha
+Authorization: Bearer {{usuarioToken}}
 Content-Type: application/json
 
 {
-  "senhaAtual": "NovaSenha@4567",
+  "senhaAtual": "OutraSenha@1234",
   "novaSenha": "fraca"
 }
 
-### Alterar senha de usuário inexistente (404 Not Found)
+### Alterar senha de usuário inexistente como admin (404 Not Found)
 POST {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/alterar-senha
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
@@ -201,32 +333,71 @@ Content-Type: application/json
 }
 
 # ===========================================================================
-# DESATIVAR USUÁRIO (soft delete — idempotente)
+# DESATIVAR USUÁRIO (somente Administrador — soft delete idempotente)
 # ===========================================================================
 
-### Desativar usuário (caso feliz — 204 No Content)
-PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/desativar
+### Desativar sem token (401 Unauthorized)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/desativar
+
+### Desativar como usuário comum (403 Forbidden)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/desativar
+Authorization: Bearer {{usuarioToken}}
+
+### Desativar como admin (caso feliz — 204 No Content)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/desativar
+Authorization: Bearer {{adminToken}}
 
 ### Desativar novamente — idempotente (204 No Content)
-PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/desativar
+PATCH {{host}}/api/usuarios/{{usuarioId}}/desativar
+Authorization: Bearer {{adminToken}}
 
-### Desativar usuário inexistente (404 Not Found)
+### Desativar usuário inexistente como admin (404 Not Found)
 PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/desativar
+Authorization: Bearer {{adminToken}}
 
 # ===========================================================================
-# ALTERAR TIPO DE USUÁRIO
+# ALTERAR TIPO DE USUÁRIO (somente Administrador)
 # ===========================================================================
 
-### Promover a Administrador (200 OK)
-PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+### Alterar tipo sem token (401 Unauthorized)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/tipo
 Content-Type: application/json
 
 {
   "tipo": "Administrador"
 }
 
-### Rebaixar para Usuário (200 OK)
-PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+### Alterar tipo como usuário comum (403 Forbidden)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/tipo
+Authorization: Bearer {{usuarioToken}}
+Content-Type: application/json
+
+{
+  "tipo": "Administrador"
+}
+
+### Promover a Administrador como admin (200 OK)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/tipo
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "tipo": "Administrador"
+}
+
+### Rebaixar para Usuário como admin (200 OK — assumindo que o alvo NÃO é o próprio admin do token)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/tipo
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "tipo": "Usuario"
+}
+
+### Admin tentando rebaixar a SI MESMO (400 Bad Request — "rebaixar a si mesmo")
+# Substitua {{ADMIN-DO-SEED-ID}} pelo Id do admin retornado no login.
+PATCH {{host}}/api/usuarios/ADMIN-DO-SEED-ID/tipo
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
@@ -234,15 +405,17 @@ Content-Type: application/json
 }
 
 ### Tipo inválido (400 Bad Request)
-PATCH {{host}}/api/usuarios/{{cadastrarUsuario.response.body.id}}/tipo
+PATCH {{host}}/api/usuarios/{{usuarioId}}/tipo
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {
   "tipo": "Root"
 }
 
-### Alterar tipo de usuário inexistente (404 Not Found)
+### Alterar tipo de usuário inexistente como admin (404 Not Found)
 PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/tipo
+Authorization: Bearer {{adminToken}}
 Content-Type: application/json
 
 {

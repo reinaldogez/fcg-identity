@@ -10,6 +10,7 @@ public static class DatabaseResetExtensions
     {
         using IServiceScope scope = factory.Services.CreateScope();
         FcgDbContext context = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        await context.Database.ExecuteSqlRawAsync("DELETE FROM RefreshTokens");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM Usuarios");
     }
 }
