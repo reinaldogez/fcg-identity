@@ -18,6 +18,12 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
             logger.LogWarning(ex, "Conflito de domínio: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
             await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status409Conflict, "ErroDeNegocio", ex.Message, traceId));
         }
+        catch (DomainAuthException ex)
+        {
+            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
+            logger.LogWarning(ex, "Falha de autenticação: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
+            await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status401Unauthorized, "ErroDeAutenticacao", ex.Message, traceId));
+        }
         catch (DomainException ex)
         {
             string traceId = Activity.Current?.Id ?? context.TraceIdentifier;

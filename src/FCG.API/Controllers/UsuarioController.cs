@@ -1,8 +1,10 @@
+using System.ComponentModel.DataAnnotations;
+using System.IdentityModel.Tokens.Jwt;
 using FCG.Application.DTOs;
 using FCG.Application.UseCases;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using System.ComponentModel.DataAnnotations;
 
 namespace FCG.API.Controllers;
 
@@ -48,11 +50,16 @@ public class UsuarioController(
     /// <param name="id">Identificador único do usuário.</param>
     /// <param name="cancellationToken">Token de cancelamento da requisição.</param>
     /// <response code="200">Usuário encontrado.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="500">Erro interno no servidor.</response>
     [HttpGet("{id:guid}", Name = "ObterUsuarioPorId")]
+    [Authorize(Policy = "OwnerOrAdmin")]
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -77,11 +84,15 @@ public class UsuarioController(
     /// <response code="200">Lista paginada de usuários.</response>
     /// <response code="400">Parâmetros de paginação inválidos.</response>
     /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Apenas administradores podem listar usuários.</response>
     /// <response code="500">Erro interno no servidor.</response>
-    // TODO: [Authorize(Roles = "Administrador")] — aguardando feature JWT (ver docs/debitos-tecnicos.md)
     [HttpGet]
+    [Authorize(Roles = "Administrador")]
     [ProducesResponseType(typeof(ListarUsuariosResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ListarAsync(
@@ -104,11 +115,15 @@ public class UsuarioController(
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="409">E-mail já cadastrado por outro usuário.</response>
     /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="500">Erro interno no servidor.</response>
-    // TODO: [Authorize] — apenas o próprio usuário ou Administrador; aguardando feature JWT (ver docs/debitos-tecnicos.md)
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "OwnerOrAdmin")]
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
@@ -135,11 +150,15 @@ public class UsuarioController(
     /// <response code="400">Senha atual incorreta ou nova senha não atende aos requisitos.</response>
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="500">Erro interno no servidor.</response>
-    // TODO: [Authorize] — apenas o próprio usuário; aguardando feature JWT (ver docs/debitos-tecnicos.md)
     [HttpPost("{id:guid}/alterar-senha")]
+    [Authorize(Policy = "OwnerOrAdmin")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -163,10 +182,14 @@ public class UsuarioController(
     /// <response code="204">Usuário desativado (ou já estava desativado).</response>
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Apenas administradores podem desativar usuários.</response>
     /// <response code="500">Erro interno no servidor.</response>
-    // TODO: [Authorize(Roles = "Administrador")] — aguardando feature JWT (ver docs/debitos-tecnicos.md)
     [HttpPatch("{id:guid}/desativar")]
+    [Authorize(Roles = "Administrador")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -191,11 +214,15 @@ public class UsuarioController(
     /// <response code="400">Tipo inválido.</response>
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Apenas administradores podem alterar o tipo de um usuário.</response>
     /// <response code="500">Erro interno no servidor.</response>
-    // TODO: [Authorize(Roles = "Administrador")] — aguardando feature JWT (ver docs/debitos-tecnicos.md)
     [HttpPatch("{id:guid}/tipo")]
+    [Authorize(Roles = "Administrador")]
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -204,7 +231,8 @@ public class UsuarioController(
         [FromBody] AlterarTipoRequest request,
         CancellationToken cancellationToken)
     {
-        var resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(id, request, cancellationToken);
+        Guid solicitanteId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        var resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(id, solicitanteId, request, cancellationToken);
         if (resposta is null)
             return NotFound();
 

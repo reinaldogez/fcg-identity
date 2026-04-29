@@ -10,7 +10,7 @@ public class AlterarTipoUsuarioUseCase(
     IUnitOfWork unitOfWork)
 {
     public async Task<UsuarioResponse?> ExecutarAsync(
-        Guid id, AlterarTipoRequest request, CancellationToken cancellationToken = default)
+        Guid id, Guid solicitanteId, AlterarTipoRequest request, CancellationToken cancellationToken = default)
     {
         var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
         if (usuario is null)
@@ -22,7 +22,7 @@ public class AlterarTipoUsuarioUseCase(
                 "Tipo de usuário inválido. Valores aceitos: Usuario, Administrador.");
         }
 
-        usuario.AlterarTipo(novoTipo);
+        usuario.AlterarTipoSolicitadoPor(novoTipo, solicitanteId);
         repositorio.Atualizar(usuario);
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
 
