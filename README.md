@@ -169,7 +169,7 @@ Falhas de autenticação retornam **401** com mensagem genérica `"Credenciais i
 | Método | Rota | Acesso |
 |---|---|---|
 | `POST` | `/api/usuarios` | público |
-| `GET` | `/api/usuarios/{id}` | público |
+| `GET` | `/api/usuarios/{id}` | próprio dono **ou** `Administrador` (policy `OwnerOrAdmin`) |
 | `GET` | `/api/usuarios` | `Administrador` |
 | `PUT` | `/api/usuarios/{id}` | próprio dono **ou** `Administrador` (policy `OwnerOrAdmin`) |
 | `POST` | `/api/usuarios/{id}/alterar-senha` | próprio dono **ou** `Administrador` |
