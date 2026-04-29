@@ -14,11 +14,6 @@ public class LogoutUseCase(
         LogoutRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-        {
-            return;
-        }
-
         string hash = jwtTokenService.CalcularHashRefreshToken(request.RefreshToken);
         RefreshToken? token = await refreshTokenRepository.ObterPorHashAsync(hash, cancellationToken);
 

@@ -492,7 +492,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     {
         var resposta = await _client.PatchAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/tipo",
-            new AlterarTipoRequest("Administrador"));
+            new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -506,7 +506,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest("Administrador"));
+            new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -520,7 +520,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest("Administrador"));
+            new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
@@ -536,7 +536,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest("Usuario"));
+            new AlterarTipoRequest(TipoUsuario.Usuario));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
@@ -551,7 +551,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{adminId}/tipo",
-            new AlterarTipoRequest("Usuario"));
+            new AlterarTipoRequest(TipoUsuario.Usuario));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
@@ -565,9 +565,12 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
         var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-tipo-inv@fcg.com", tipo: TipoUsuario.Administrador);
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
-        var resposta = await adminClient.PatchAsJsonAsync(
-            $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest("Root"));
+        var conteudo = new System.Net.Http.StringContent(
+            "{\"tipo\":\"Root\"}",
+            System.Text.Encoding.UTF8,
+            "application/json");
+        var resposta = await adminClient.PatchAsync(
+            $"/api/usuarios/{alvoId}/tipo", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -580,7 +583,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/tipo",
-            new AlterarTipoRequest("Administrador"));
+            new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

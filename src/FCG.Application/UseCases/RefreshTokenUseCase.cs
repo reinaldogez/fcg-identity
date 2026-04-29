@@ -18,11 +18,6 @@ public class RefreshTokenUseCase(
         RefreshTokenRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.RefreshToken))
-        {
-            throw new DomainAuthException(MensagemFalha);
-        }
-
         string hash = jwtTokenService.CalcularHashRefreshToken(request.RefreshToken);
 
         RefreshToken? tokenExistente = await refreshTokenRepository.ObterPorHashAsync(hash, cancellationToken);

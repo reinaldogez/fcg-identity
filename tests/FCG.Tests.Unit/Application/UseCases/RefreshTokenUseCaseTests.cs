@@ -76,15 +76,6 @@ public class RefreshTokenUseCaseTests
     }
 
     [Fact]
-    public async Task DeveLancarQuandoRefreshTokenVazio()
-    {
-        Func<Task> acao = () => _useCase.ExecutarAsync(new RefreshTokenRequest(""));
-
-        await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemFalha);
-        _uowMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
     public async Task DeveLancarQuandoTokenInexistente()
     {
         _refreshRepoMock

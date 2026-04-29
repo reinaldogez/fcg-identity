@@ -200,6 +200,27 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     }
 
     [Fact]
+    public async Task DeveRetornar400QuandoRefreshTokenVazio()
+    {
+        var conteudo = new StringContent(
+            "{\"refreshToken\":\"\"}",
+            Encoding.UTF8,
+            "application/json");
+        var resposta = await _client.PostAsync("/api/auth/refresh", conteudo);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeveRetornar400QuandoRefreshTokenAusente()
+    {
+        var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
+        var resposta = await _client.PostAsync("/api/auth/refresh", conteudo);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
     public async Task DeveRejeitarRefreshQuandoUsuarioFoiDesativado()
     {
         await CadastrarUsuarioAsync();
@@ -252,6 +273,27 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
             new LogoutRequest("token-que-nao-existe"));
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DeveRetornar400NoLogoutComTokenVazio()
+    {
+        var conteudo = new StringContent(
+            "{\"refreshToken\":\"\"}",
+            Encoding.UTF8,
+            "application/json");
+        var resposta = await _client.PostAsync("/api/auth/logout", conteudo);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task DeveRetornar400NoLogoutComTokenAusente()
+    {
+        var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
+        var resposta = await _client.PostAsync("/api/auth/logout", conteudo);
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

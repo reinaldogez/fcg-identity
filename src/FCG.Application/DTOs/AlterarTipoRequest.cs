@@ -1,3 +1,5 @@
+using FCG.Domain.Enums;
+
 namespace FCG.Application.DTOs;
 
-public record AlterarTipoRequest(string Tipo);
+public record AlterarTipoRequest(TipoUsuario Tipo);

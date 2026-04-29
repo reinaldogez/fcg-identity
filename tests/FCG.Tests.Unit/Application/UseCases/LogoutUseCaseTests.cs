@@ -67,14 +67,4 @@ public class LogoutUseCaseTests
         _uowMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
-    [Fact]
-    public async Task DeveSerNoOpQuandoRequestVazio()
-    {
-        await _useCase.ExecutarAsync(new LogoutRequest(""));
-
-        _refreshRepoMock.Verify(
-            r => r.ObterPorHashAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()),
-            Times.Never);
-        _uowMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
 }

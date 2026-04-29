@@ -39,7 +39,7 @@ public class AlterarTipoUsuarioUseCaseTests
             .ReturnsAsync(usuario);
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
-            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest("Administrador"));
+            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resultado.Should().NotBeNull();
         resultado!.Tipo.Should().Be(TipoUsuario.Administrador.ToString());
@@ -54,45 +54,9 @@ public class AlterarTipoUsuarioUseCaseTests
             .ReturnsAsync(usuario);
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
-            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest("Usuario"));
+            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest(TipoUsuario.Usuario));
 
         resultado!.Tipo.Should().Be(TipoUsuario.Usuario.ToString());
-    }
-
-    [Theory]
-    [InlineData("administrador")]
-    [InlineData("ADMINISTRADOR")]
-    [InlineData("Administrador")]
-    public async Task DeveAceitarTipoCaseInsensitive(string tipo)
-    {
-        Usuario usuario = CriarUsuario();
-        _repositorioMock
-            .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(usuario);
-
-        UsuarioResponse? resultado = await _useCase.ExecutarAsync(
-            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest(tipo));
-
-        resultado.Should().NotBeNull();
-        resultado!.Tipo.Should().Be(TipoUsuario.Administrador.ToString());
-    }
-
-    [Theory]
-    [InlineData("Root")]
-    [InlineData("")]
-    [InlineData("  ")]
-    [InlineData("123")]
-    public async Task DeveRejeitarTipoInvalido(string tipo)
-    {
-        Usuario usuario = CriarUsuario();
-        _repositorioMock
-            .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(usuario);
-
-        Func<Task> acao = () => _useCase.ExecutarAsync(
-            usuario.Id, SolicitanteAdminId, new AlterarTipoRequest(tipo));
-
-        await acao.Should().ThrowAsync<DomainException>().WithMessage("*Tipo*");
     }
 
     [Fact]
@@ -103,7 +67,7 @@ public class AlterarTipoUsuarioUseCaseTests
             .ReturnsAsync((Usuario?)null);
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
-            Guid.NewGuid(), SolicitanteAdminId, new AlterarTipoRequest("Administrador"));
+            Guid.NewGuid(), SolicitanteAdminId, new AlterarTipoRequest(TipoUsuario.Administrador));
 
         resultado.Should().BeNull();
     }
@@ -116,7 +80,7 @@ public class AlterarTipoUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        await _useCase.ExecutarAsync(usuario.Id, SolicitanteAdminId, new AlterarTipoRequest("Administrador"));
+        await _useCase.ExecutarAsync(usuario.Id, SolicitanteAdminId, new AlterarTipoRequest(TipoUsuario.Administrador));
 
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
@@ -132,7 +96,7 @@ public class AlterarTipoUsuarioUseCaseTests
             .ReturnsAsync(admin);
 
         Func<Task> acao = () => _useCase.ExecutarAsync(
-            admin.Id, admin.Id, new AlterarTipoRequest("Usuario"));
+            admin.Id, admin.Id, new AlterarTipoRequest(TipoUsuario.Usuario));
 
         await acao.Should().ThrowAsync<DomainException>()
             .WithMessage("*rebaixar a si mesmo*");
