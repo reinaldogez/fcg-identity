@@ -7,7 +7,6 @@ using FCG.API.Logging;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Formatting.Compact;
 using FCG.API.Middlewares;
 using FCG.API.OpenApi;
 using FCG.Application.Interfaces;
@@ -25,19 +24,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console(new CompactJsonFormatter())
-    .CreateBootstrapLogger();
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((ctx, lc) => lc
-    .ReadFrom.Configuration(ctx.Configuration)
+builder.Services.AddSerilog((services, lc) => lc
+    .ReadFrom.Configuration(builder.Configuration)
+    .ReadFrom.Services(services)
     .Enrich.FromLogContext()
     .Enrich.WithMachineName()
     .Enrich.WithEnvironmentName()
-    .Enrich.With<ActivityEnricher>()
-    .Enrich.WithProperty("Application", "FCG.API"));
+    .Enrich.WithProperty("Application", "FCG.API")
+    .Enrich.With<ActivityEnricher>());
 
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService(serviceName: "FCG.API", serviceVersion: "1.0.0"))

@@ -39,7 +39,7 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 
 ## Stack
 
-- **.NET 10 / C# 13** — runtime e linguagem
+- **.NET 10 / C# 14** — runtime e linguagem
 - **SQL Server + EF Core (Code-First com Migrations)** — persistência relacional
 - **BCrypt.Net-Next** — hashing de senhas
 - **Microsoft.AspNetCore.Authentication.JwtBearer + System.IdentityModel.Tokens.Jwt** — JWT HS256
