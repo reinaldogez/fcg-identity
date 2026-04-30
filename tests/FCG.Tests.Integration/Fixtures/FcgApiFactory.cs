@@ -1,4 +1,5 @@
 using System.Net.Http.Headers;
+using FCG.Application.DTOs;
 using FCG.Application.Interfaces;
 using FCG.Domain.Entities;
 using FCG.Domain.Enums;

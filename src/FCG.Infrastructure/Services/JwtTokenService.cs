@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using FCG.Application.DTOs;
 using FCG.Application.Interfaces;
 using FCG.Application.Options;
 using FCG.Domain.Entities;

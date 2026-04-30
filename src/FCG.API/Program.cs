@@ -3,6 +3,11 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using FCG.API.Authorization;
+using FCG.API.Logging;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using Serilog;
+using Serilog.Formatting.Compact;
 using FCG.API.Middlewares;
 using FCG.API.OpenApi;
 using FCG.Application.Interfaces;
@@ -20,7 +25,25 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console(new CompactJsonFormatter())
+    .CreateBootstrapLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, lc) => lc
+    .ReadFrom.Configuration(ctx.Configuration)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithEnvironmentName()
+    .Enrich.With<ActivityEnricher>()
+    .Enrich.WithProperty("Application", "FCG.API"));
+
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(r => r.AddService(serviceName: "FCG.API", serviceVersion: "1.0.0"))
+    .WithTracing(t => t
+        .AddAspNetCoreInstrumentation()
+        .AddConsoleExporter());
 
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
@@ -115,6 +138,7 @@ builder.Services.AddHostedService<AdminSeedService>();
 var app = builder.Build();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+app.UseSerilogRequestLogging();
 
 if (app.Environment.IsDevelopment())
 {

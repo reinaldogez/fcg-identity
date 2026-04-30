@@ -20,6 +20,7 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
     - [Fluxo](#fluxo)
     - [Endpoints de `UsuarioController`](#endpoints-de-usuariocontroller)
     - [Smoke test pelo Scalar](#smoke-test-pelo-scalar)
+  - [Observabilidade](#observabilidade)
 
 ## Sobre o projeto
 
@@ -46,6 +47,8 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 - **xUnit + FluentAssertions + Moq** — testes unitários
 - **Microsoft.AspNetCore.Mvc.Testing + Testcontainers.MsSql** — testes de integração
 - **Docker Compose** — SQL Server local para desenvolvimento
+- **Serilog + Serilog.Formatting.Compact** — logs estruturados JSON (CLEF) com enriquecimento automático (TraceId, SpanId, MachineName)
+- **OpenTelemetry SDK (AspNetCore)** — rastreamento distribuído W3C, fundação para Tempo/Grafana
 
 ## Estrutura de pastas
 
@@ -181,3 +184,20 @@ Falhas de autenticação retornam **401** com mensagem genérica `"Credenciais i
 Em desenvolvimento, abra `https://localhost:7222/scalar/v1`. O botão **Authorize** usa o SecurityScheme Bearer (configurado via `BearerSecuritySchemeTransformer`): cole apenas o `accessToken` (sem o prefixo `Bearer`) e os endpoints protegidos passam a enviar o header automaticamente.
 
 Casos prontos em `src/FCG.API/FCG.API.http` (login → refresh → logout, e Authorization header já preenchido nos endpoints protegidos).
+
+## Observabilidade
+
+A API usa **Serilog** para logs estruturados com correlação de rastreamento via **OpenTelemetry** (TraceId/SpanId W3C). O formato de saída varia por ambiente:
+
+| Ambiente | Formato | Motivo |
+|---|---|---|
+| `Development` | Console colorido (texto legível) | DX — fácil de acompanhar durante desenvolvimento |
+| `Production` | Console JSON (CLEF, uma linha por evento) | Pronto para em etapas futuras utilizar Promtail/Alloy → Loki |
+
+Todo evento de log carrega automaticamente `TraceId`, `SpanId`, `Application`, `MachineName` e `Environment` como propriedades estruturadas. Exemplo de linha em produção:
+
+```json
+{"@t":"2026-04-29T14:32:01.123Z","@mt":"HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms","RequestMethod":"POST","RequestPath":"/api/auth/login","StatusCode":200,"Elapsed":84.3,"TraceId":"4bf92f3577b34da6a3ce929d0e0e4736","SpanId":"00f067aa0ba902b7","Application":"FCG.API"}
+```
+
+Respostas de erro (4xx/5xx) incluem o mesmo `traceId` no corpo (`ProblemDetails.Extensions["traceId"]`), permitindo correlacionar um erro reportado pelo cliente diretamente com o evento de log correspondente.

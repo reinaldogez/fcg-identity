@@ -14,32 +14,31 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         }
         catch (DomainConflictException ex)
         {
-            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            logger.LogWarning(ex, "Conflito de domínio: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
+            string traceId = Activity.Current?.TraceId.ToHexString() ?? context.TraceIdentifier;
+            logger.LogWarning(ex, "Conflito de domínio: {Mensagem} | Path: {Path}", ex.Message, context.Request.Path);
             await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status409Conflict, "ErroDeNegocio", ex.Message, traceId));
         }
         catch (DomainAuthException ex)
         {
-            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            logger.LogWarning(ex, "Falha de autenticação: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
+            string traceId = Activity.Current?.TraceId.ToHexString() ?? context.TraceIdentifier;
+            logger.LogWarning(ex, "Falha de autenticação: {Mensagem} | Path: {Path}", ex.Message, context.Request.Path);
             await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status401Unauthorized, "ErroDeAutenticacao", ex.Message, traceId));
         }
         catch (DomainException ex)
         {
-            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            logger.LogWarning(ex, "Erro de domínio: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
+            string traceId = Activity.Current?.TraceId.ToHexString() ?? context.TraceIdentifier;
+            logger.LogWarning(ex, "Erro de domínio: {Mensagem} | Path: {Path}", ex.Message, context.Request.Path);
             await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status400BadRequest, "ErroDeValidacao", ex.Message, traceId));
         }
         catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
         {
-            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            logger.LogInformation("Requisição cancelada pelo cliente. Path: {Path}, TraceId: {TraceId}", context.Request.Path, traceId);
+            logger.LogInformation("Requisição cancelada pelo cliente. Path: {Path}", context.Request.Path);
             context.Response.StatusCode = 499;
         }
         catch (Exception ex)
         {
-            string traceId = Activity.Current?.Id ?? context.TraceIdentifier;
-            logger.LogError(ex, "Erro inesperado: {Mensagem}, Path: {Path}, TraceId: {TraceId}", ex.Message, context.Request.Path, traceId);
+            string traceId = Activity.Current?.TraceId.ToHexString() ?? context.TraceIdentifier;
+            logger.LogError(ex, "Erro inesperado: {Mensagem} | Path: {Path}", ex.Message, context.Request.Path);
             await EscreverRespostaAsync(context, CriarProblemDetails(StatusCodes.Status500InternalServerError, "ErroInterno", "Ocorreu um erro interno no servidor.", traceId));
         }
     }
