@@ -34,7 +34,7 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 - **API REST com Controllers MVC** em .NET 10, documentada com OpenAPI (Scalar) — os endpoints podem ser explorados diretamente pelo navegador em `https://localhost:7222/scalar/v1`.
 - **Middleware global de erros** que captura exceções e devolve respostas padronizadas (formato `ProblemDetails`, RFC 7807) com um `traceId` em cada resposta para facilitar a correlação com logs.
 - **Persistência com Entity Framework Core** (Code-First) e migrations versionadas, usando SQL Server.
-- **Testes automatizados** cobrindo as principais regras de negócio (unitários) e o fluxo completo da API (integração com SQL Server real via Testcontainers).
+- **Testes automatizados** em três níveis: unitários para as regras de negócio, Behavior-Driven Development (BDD) com Reqnroll e Gherkin para os módulos de cadastro e autenticação, e testes de integração end-to-end com SQL Server real via Testcontainers.
 - **Modelagem em DDD:** entidades, value objects, domain services e exceptions de domínio organizados em camadas independentes (Domain, Application, Infrastructure, API), preservando a regra de dependência de dentro para fora.
 
 ## Stack
@@ -46,6 +46,7 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 - **Scalar + Microsoft.AspNetCore.OpenApi** — documentação interativa da API (equivalente ao Swagger)
 - **xUnit + FluentAssertions + Moq** — testes unitários
 - **Microsoft.AspNetCore.Mvc.Testing + Testcontainers.MsSql** — testes de integração
+- **Reqnroll 3.3.4 (xUnit)** — testes BDD com cenários Gherkin em português
 - **Docker Compose** — SQL Server local para desenvolvimento
 - **Serilog + Serilog.Formatting.Compact** — logs estruturados JSON (CLEF) com enriquecimento automático (TraceId, SpanId, MachineName)
 - **OpenTelemetry SDK (AspNetCore)** — rastreamento distribuído W3C, fundação para Tempo/Grafana
@@ -63,6 +64,7 @@ src/
 tests/
   FCG.Tests.Unit          → Unitários para Domain, Application e Middlewares.
   FCG.Tests.Integration   → Integração end-to-end com WebApplicationFactory + Testcontainers (SQL Server real em Docker).
+  FCG.Tests.Bdd           → BDD com Reqnroll: cenários Gherkin (PT-BR) para os módulos de cadastro e autenticação.
 docs/                  → Event Storming, decisões arquiteturais e documentação de DDD.
 ```
 
@@ -120,7 +122,7 @@ dotnet run --project src/FCG.API
 
 ## CI/CD (GitHub Actions)
 
-O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda automaticamente em todo `push` para `main` ou `feature/**` e em Pull Requests para `main`. Ele executa dois jobs paralelos: testes unitários e testes de integração.
+O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda automaticamente em todo `push` para `main` ou `feature/**` e em Pull Requests para `main`. Ele executa três jobs paralelos: testes unitários, testes de integração e testes BDD.
 
 Os testes de integração usam Testcontainers, que sobe um SQL Server real via Docker — o runner `ubuntu-latest` já tem Docker, então funciona sem configuração extra.
 
@@ -141,9 +143,10 @@ Configure em **Settings → Secrets and variables → Actions → New repository
 dotnet test                                      # Roda todas as suítes
 dotnet test tests/FCG.Tests.Unit/                # Apenas unitários (rápido, sem dependências)
 dotnet test tests/FCG.Tests.Integration/         # Integração end-to-end (requer Docker rodando)
+dotnet test tests/FCG.Tests.Bdd/                 # BDD Reqnroll: 7 cenários Gherkin (requer Docker rodando)
 ```
 
-Os testes de integração usam `Testcontainers.MsSql` para subir uma instância efêmera de SQL Server por execução — o Docker Desktop (ou daemon equivalente) precisa estar ativo. As migrations são aplicadas automaticamente no container antes de cada cenário, e o banco é descartado ao final.
+Os testes de integração e BDD usam `Testcontainers.MsSql` para subir uma instância efêmera de SQL Server por execução — o Docker Desktop (ou daemon equivalente) precisa estar ativo. As migrations são aplicadas automaticamente no container antes de cada cenário, e o banco é descartado ao final.
 
 ## Autenticação e Autorização
 

@@ -48,8 +48,24 @@ jobs:
 
       - name: Testes de Integração
         run: dotnet test tests/FCG.Tests.Integration/ --no-build --configuration Release --verbosity normal
-        env:
-          Jwt__SigningKey: ${{ secrets.JWT_SIGNING_KEY }}
-          Jwt__Issuer: "FcgApi.Tests"
-          Jwt__Audience: "FcgClients.Tests"
-          AdminSeed__DefaultPassword: ${{ secrets.ADMIN_SEED_PASSWORD }}
+
+  bdd-tests:
+    name: Testes BDD (Reqnroll)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Testes BDD
+        run: dotnet test tests/FCG.Tests.Bdd/ --no-build --configuration Release --verbosity normal

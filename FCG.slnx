@@ -6,6 +6,7 @@
     <Project Path="src/FCG.Infrastructure/FCG.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/FCG.Tests.Bdd/FCG.Tests.Bdd.csproj" />
     <Project Path="tests/FCG.Tests.Integration/FCG.Tests.Integration.csproj" />
     <Project Path="tests/FCG.Tests.Unit/FCG.Tests.Unit.csproj" />
   </Folder>
