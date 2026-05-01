@@ -5,12 +5,12 @@ namespace FCG.Domain.ValueObjects;
 
 public partial record Senha
 {
-    public string Texto { get; }
-
     private Senha(string texto)
     {
         Texto = texto;
     }
+
+    public string Texto { get; }
 
     public static Senha Validar(string senhaTexto)
     {

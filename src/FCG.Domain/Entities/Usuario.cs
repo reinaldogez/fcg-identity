@@ -8,6 +8,8 @@ public class Usuario
 {
     public const int NomeTamanhoMaximo = 200;
 
+    private Usuario() { }
+
     public Guid Id { get; private set; }
     public string Nome { get; private set; } = null!;
     public Email Email { get; private set; } = null!;
@@ -16,13 +18,12 @@ public class Usuario
     public DateTime DataCriacao { get; private set; }
     public bool Ativo { get; private set; }
 
-    private Usuario() { }
-
     public static Usuario Criar(
         string nome,
         Email email,
         SenhaHash senhaHash,
-        TipoUsuario tipo = TipoUsuario.Usuario)
+        TipoUsuario tipo = TipoUsuario.Usuario
+    )
     {
         return new Usuario
         {
@@ -32,7 +33,7 @@ public class Usuario
             SenhaHash = senhaHash,
             Tipo = tipo,
             DataCriacao = DateTime.UtcNow,
-            Ativo = true
+            Ativo = true,
         };
     }
 
@@ -71,9 +72,11 @@ public class Usuario
         if (!Enum.IsDefined(novoTipo))
             throw new DomainException("Tipo de usuário inválido.");
 
-        if (solicitanteId == Id
+        if (
+            solicitanteId == Id
             && Tipo == TipoUsuario.Administrador
-            && novoTipo != TipoUsuario.Administrador)
+            && novoTipo != TipoUsuario.Administrador
+        )
         {
             throw new DomainException("Um administrador não pode rebaixar a si mesmo.");
         }

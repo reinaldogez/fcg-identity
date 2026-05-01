@@ -24,11 +24,9 @@ public class AtualizarUsuarioUseCaseTests
         _useCase = new AtualizarUsuarioUseCase(
             _repositorioMock.Object,
             _domainServiceMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object
+        );
     }
-
-    private Usuario CriarUsuario() =>
-        Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
 
     [Fact]
     public async Task DeveAtualizarUsuarioComSucesso()
@@ -38,10 +36,17 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
         _domainServiceMock
-            .Setup(s => s.AtualizarDadosAsync(
-                usuario, "Novo Nome", It.IsAny<Email>(), It.IsAny<CancellationToken>()))
+            .Setup(s =>
+                s.AtualizarDadosAsync(
+                    usuario,
+                    "Novo Nome",
+                    It.IsAny<Email>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Callback<Usuario, string, Email, CancellationToken>(
-                (u, nome, email, _) => u.AlterarDados(nome, email));
+                (u, nome, email, _) => u.AlterarDados(nome, email)
+            );
 
         var request = new AtualizarUsuarioRequest("Novo Nome", "novo@email.com");
 
@@ -58,7 +63,10 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        var resultado = await _useCase.ExecutarAsync(Guid.NewGuid(), new AtualizarUsuarioRequest("Nome", "email@email.com"));
+        var resultado = await _useCase.ExecutarAsync(
+            Guid.NewGuid(),
+            new AtualizarUsuarioRequest("Nome", "email@email.com")
+        );
 
         resultado.Should().BeNull();
     }
@@ -71,7 +79,11 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        var acao = () => _useCase.ExecutarAsync(usuario.Id, new AtualizarUsuarioRequest("Nome", "email-invalido"));
+        var acao = () =>
+            _useCase.ExecutarAsync(
+                usuario.Id,
+                new AtualizarUsuarioRequest("Nome", "email-invalido")
+            );
 
         await acao.Should().ThrowAsync<DomainException>();
     }
@@ -84,11 +96,23 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
         _domainServiceMock
-            .Setup(s => s.AtualizarDadosAsync(
-                It.IsAny<Usuario>(), It.IsAny<string>(), It.IsAny<Email>(), It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new DomainConflictException("Já existe um usuário cadastrado com este e-mail."));
+            .Setup(s =>
+                s.AtualizarDadosAsync(
+                    It.IsAny<Usuario>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Email>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(
+                new DomainConflictException("Já existe um usuário cadastrado com este e-mail.")
+            );
 
-        var acao = () => _useCase.ExecutarAsync(usuario.Id, new AtualizarUsuarioRequest("Nome", "outro@email.com"));
+        var acao = () =>
+            _useCase.ExecutarAsync(
+                usuario.Id,
+                new AtualizarUsuarioRequest("Nome", "outro@email.com")
+            );
 
         await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }
@@ -101,11 +125,20 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
         _domainServiceMock
-            .Setup(s => s.AtualizarDadosAsync(
-                It.IsAny<Usuario>(), It.IsAny<string>(), It.IsAny<Email>(), It.IsAny<CancellationToken>()))
+            .Setup(s =>
+                s.AtualizarDadosAsync(
+                    It.IsAny<Usuario>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Email>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.CompletedTask);
 
-        await _useCase.ExecutarAsync(usuario.Id, new AtualizarUsuarioRequest("Nome", "original@email.com"));
+        await _useCase.ExecutarAsync(
+            usuario.Id,
+            new AtualizarUsuarioRequest("Nome", "original@email.com")
+        );
 
         _repositorioMock.Verify(r => r.Atualizar(usuario), Times.Once);
     }
@@ -118,14 +151,27 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
         _domainServiceMock
-            .Setup(s => s.AtualizarDadosAsync(
-                It.IsAny<Usuario>(), It.IsAny<string>(), It.IsAny<Email>(), It.IsAny<CancellationToken>()))
+            .Setup(s =>
+                s.AtualizarDadosAsync(
+                    It.IsAny<Usuario>(),
+                    It.IsAny<string>(),
+                    It.IsAny<Email>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .Returns(Task.CompletedTask);
 
-        await _useCase.ExecutarAsync(usuario.Id, new AtualizarUsuarioRequest("Nome", "original@email.com"));
+        await _useCase.ExecutarAsync(
+            usuario.Id,
+            new AtualizarUsuarioRequest("Nome", "original@email.com")
+        );
 
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
+
+    private Usuario CriarUsuario() =>
+        Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
 }

@@ -6,8 +6,8 @@ namespace FCG.Tests.Unit.Domain.Entities;
 
 public class RefreshTokenTests
 {
-    private static readonly Guid UsuarioId = Guid.NewGuid();
     private const string Hash = "hash-valido";
+    private static readonly Guid UsuarioId = Guid.NewGuid();
     private static readonly DateTime ExpiraEm = DateTime.UtcNow.AddDays(7);
 
     [Fact]
@@ -52,11 +52,15 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void EstaAtivoDeveSerFalseQuandoExpirado()
+    public async Task EstaAtivoDeveSerFalseQuandoExpirado()
     {
-        RefreshToken token = RefreshToken.Criar(UsuarioId, Hash, DateTime.UtcNow.AddMilliseconds(50));
+        RefreshToken token = RefreshToken.Criar(
+            UsuarioId,
+            Hash,
+            DateTime.UtcNow.AddMilliseconds(50)
+        );
 
-        Thread.Sleep(100);
+        await Task.Delay(100);
 
         token.EstaAtivo.Should().BeFalse();
     }
@@ -73,13 +77,13 @@ public class RefreshTokenTests
     }
 
     [Fact]
-    public void RevogarDeveSerIdempotente()
+    public async Task RevogarDeveSerIdempotente()
     {
         RefreshToken token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
         token.Revogar();
         DateTime primeiro = token.RevogadoEm!.Value;
 
-        Thread.Sleep(20);
+        await Task.Delay(20);
         token.Revogar();
 
         token.RevogadoEm.Should().Be(primeiro);

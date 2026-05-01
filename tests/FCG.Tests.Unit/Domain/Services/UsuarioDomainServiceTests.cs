@@ -9,12 +9,14 @@ namespace FCG.Tests.Unit.Domain.Services;
 
 public class UsuarioDomainServiceTests
 {
+    private const string NomeValido = "João Silva";
     private readonly Mock<IUsuarioRepository> _repositorioMock = new();
     private readonly UsuarioDomainService _domainService;
 
     private readonly Email _emailValido = Email.Criar("joao@email.com");
-    private readonly SenhaHash _senhaHashValida = SenhaHash.Reconstituir("$2a$11$hashFalsoParaTestes");
-    private const string NomeValido = "João Silva";
+    private readonly SenhaHash _senhaHashValida = SenhaHash.Reconstituir(
+        "$2a$11$hashFalsoParaTestes"
+    );
 
     public UsuarioDomainServiceTests()
     {
@@ -28,7 +30,11 @@ public class UsuarioDomainServiceTests
     [Fact]
     public async Task DeveRegistrarUsuarioComDadosValidos()
     {
-        var usuario = await _domainService.RegistrarAsync(NomeValido, _emailValido, _senhaHashValida);
+        var usuario = await _domainService.RegistrarAsync(
+            NomeValido,
+            _emailValido,
+            _senhaHashValida
+        );
 
         usuario.Nome.Should().Be(NomeValido);
         usuario.Email.Should().Be(_emailValido);
@@ -45,8 +51,7 @@ public class UsuarioDomainServiceTests
 
         var acao = () => _domainService.RegistrarAsync(NomeValido, _emailValido, _senhaHashValida);
 
-        await acao.Should().ThrowAsync<DomainConflictException>()
-            .WithMessage("*e-mail*");
+        await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }
 
     [Fact]
@@ -56,7 +61,8 @@ public class UsuarioDomainServiceTests
 
         _repositorioMock.Verify(
             r => r.ExisteComEmailAsync(_emailValido, It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
@@ -79,7 +85,8 @@ public class UsuarioDomainServiceTests
 
         _repositorioMock.Verify(
             r => r.ExisteComEmailAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -119,6 +126,7 @@ public class UsuarioDomainServiceTests
 
         _repositorioMock.Verify(
             r => r.ExisteComEmailAsync(emailNovo, It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 }

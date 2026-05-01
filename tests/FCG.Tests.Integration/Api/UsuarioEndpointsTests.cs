@@ -16,7 +16,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
-        PropertyNameCaseInsensitive = true
+        PropertyNameCaseInsensitive = true,
     };
 
     private readonly FcgApiFactory _factory;
@@ -25,10 +25,9 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public UsuarioEndpointsTests(FcgApiFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
+        _client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false }
+        );
     }
 
     public Task InitializeAsync() => _factory.ResetarBancoAsync();
@@ -40,7 +39,11 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveCadastrarUsuarioERetornar201ComLocationHeader()
     {
-        var request = new CadastrarUsuarioRequest("Reinaldo Teste", "reinaldo@fcg.com", "Senha@123");
+        var request = new CadastrarUsuarioRequest(
+            "Reinaldo Teste",
+            "reinaldo@fcg.com",
+            "Senha@123"
+        );
 
         var resposta = await _client.PostAsJsonAsync("/api/usuarios", request);
 
@@ -95,7 +98,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveObterUsuarioPorIdComoDono()
     {
-        var (id, token) = await _factory.CriarUsuarioAutenticadoAsync("busca@fcg.com", nome: "Busca");
+        var (id, token) = await _factory.CriarUsuarioAutenticadoAsync(
+            "busca@fcg.com",
+            nome: "Busca"
+        );
         var client = _factory.CreateAuthenticatedClient(token);
 
         var resposta = await client.GetAsync($"/api/usuarios/{id}");
@@ -109,7 +115,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveObterUsuarioPorIdComoAdmin()
     {
         var (idAlvo, _) = await _factory.CriarUsuarioAutenticadoAsync("alvo@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-obter@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-obter@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.GetAsync($"/api/usuarios/{idAlvo}");
@@ -144,7 +153,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar404ParaUsuarioInexistente()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-404@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.GetAsync($"/api/usuarios/{Guid.NewGuid()}");
@@ -176,7 +188,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveListarUsuariosPaginadoComoAdmin()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-listar@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-listar@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         await _factory.CriarUsuarioAutenticadoAsync("a@fcg.com");
         await _factory.CriarUsuarioAutenticadoAsync("b@fcg.com");
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
@@ -196,7 +211,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [InlineData("?tamanhoPagina=101")]
     public async Task DeveRetornar400ParaParametrosInvalidos(string queryString)
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-q@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-q@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.GetAsync($"/api/usuarios{queryString}");
@@ -211,7 +229,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     {
         var resposta = await _client.PutAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}",
-            new AtualizarUsuarioRequest("Nome", "x@fcg.com"));
+            new AtualizarUsuarioRequest("Nome", "x@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -224,7 +243,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PutAsJsonAsync(
             $"/api/usuarios/{id}",
-            new AtualizarUsuarioRequest("Atualizado", "atualizado@fcg.com"));
+            new AtualizarUsuarioRequest("Atualizado", "atualizado@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
@@ -241,7 +261,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PutAsJsonAsync(
             $"/api/usuarios/{alvoId}",
-            new AtualizarUsuarioRequest("Hackeado", "hack@fcg.com"));
+            new AtualizarUsuarioRequest("Hackeado", "hack@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -250,12 +271,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DevePermitirAdminAtualizarQualquerUsuario()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("alvo-admin@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-atualizar@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-atualizar@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PutAsJsonAsync(
             $"/api/usuarios/{alvoId}",
-            new AtualizarUsuarioRequest("Renomeado pelo admin", "renomeado@fcg.com"));
+            new AtualizarUsuarioRequest("Renomeado pelo admin", "renomeado@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -263,12 +288,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar404AoAtualizarUsuarioInexistenteComoAdmin()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-404@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PutAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}",
-            new AtualizarUsuarioRequest("Nome", "email@fcg.com"));
+            new AtualizarUsuarioRequest("Nome", "email@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -281,7 +310,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PutAsJsonAsync(
             $"/api/usuarios/{id}",
-            new AtualizarUsuarioRequest("Nome", "email-invalido"));
+            new AtualizarUsuarioRequest("Nome", "email-invalido")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -295,7 +325,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PutAsJsonAsync(
             $"/api/usuarios/{id1}",
-            new AtualizarUsuarioRequest("Um", "dois@fcg.com"));
+            new AtualizarUsuarioRequest("Um", "dois@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
@@ -308,7 +339,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PutAsJsonAsync(
             $"/api/usuarios/{id}",
-            new AtualizarUsuarioRequest("Nome Atualizado", "mesmoemail@fcg.com"));
+            new AtualizarUsuarioRequest("Nome Atualizado", "mesmoemail@fcg.com")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
     }
@@ -320,7 +352,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     {
         var resposta = await _client.PostAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "NovaSenha@456"));
+            new AlterarSenhaRequest("Senha@123", "NovaSenha@456")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -333,7 +366,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PostAsJsonAsync(
             $"/api/usuarios/{id}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "NovaSenha@456"));
+            new AlterarSenhaRequest("Senha@123", "NovaSenha@456")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -347,7 +381,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PostAsJsonAsync(
             $"/api/usuarios/{alvoId}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "Hackeada@456"));
+            new AlterarSenhaRequest("Senha@123", "Hackeada@456")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -355,12 +390,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar404AoAlterarSenhaDeUsuarioInexistenteComoAdmin()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-senha-404@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-senha-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PostAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "NovaSenha@456"));
+            new AlterarSenhaRequest("Senha@123", "NovaSenha@456")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -373,7 +412,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PostAsJsonAsync(
             $"/api/usuarios/{id}/alterar-senha",
-            new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@456"));
+            new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@456")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -386,7 +426,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PostAsJsonAsync(
             $"/api/usuarios/{id}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "fraca"));
+            new AlterarSenhaRequest("Senha@123", "fraca")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -403,7 +444,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         await client.PostAsJsonAsync(
             $"/api/usuarios/{id}/alterar-senha",
-            new AlterarSenhaRequest("Senha@123", "NovaSenha@456"));
+            new AlterarSenhaRequest("Senha@123", "NovaSenha@456")
+        );
 
         using var scopeDepois = _factory.Services.CreateScope();
         var contextDepois = scopeDepois.ServiceProvider.GetRequiredService<FcgDbContext>();
@@ -417,8 +459,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar401AoDesativarSemToken()
     {
-        var resposta = await _client.PatchAsync(
-            $"/api/usuarios/{Guid.NewGuid()}/desativar", null);
+        var resposta = await _client.PatchAsync($"/api/usuarios/{Guid.NewGuid()}/desativar", null);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -427,7 +468,9 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveRetornar403AoDesativarComoUsuarioComum()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("alvo-desativar@fcg.com");
-        var (_, comumToken) = await _factory.CriarUsuarioAutenticadoAsync("comum-desativar@fcg.com");
+        var (_, comumToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "comum-desativar@fcg.com"
+        );
         var client = _factory.CreateAuthenticatedClient(comumToken);
 
         var resposta = await client.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
@@ -439,7 +482,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveDesativarUsuarioComoAdminERetornar204()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("desativaralvo@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-desat@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-desat@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
@@ -450,10 +496,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar404AoDesativarUsuarioInexistenteComoAdmin()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-desat-404@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-desat-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
-        var resposta = await adminClient.PatchAsync($"/api/usuarios/{Guid.NewGuid()}/desativar", null);
+        var resposta = await adminClient.PatchAsync(
+            $"/api/usuarios/{Guid.NewGuid()}/desativar",
+            null
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
@@ -462,7 +514,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveSerIdempotenteAoDesativarDuasVezesComoAdmin()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("idempotente@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-idem@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-idem@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         await adminClient.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
@@ -475,7 +530,10 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveRefletirAtivoFalseNoGetAposDesativar()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("ativofalso@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-ativofalso@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-ativofalso@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         await adminClient.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
@@ -492,7 +550,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     {
         var resposta = await _client.PatchAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Administrador));
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -506,7 +565,8 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
 
         var resposta = await client.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Administrador));
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
     }
@@ -515,12 +575,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveAlterarTipoParaAdministradorComoAdmin()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("alvo-promover@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-promover@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-promover@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Administrador));
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
@@ -530,13 +594,20 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveAlterarTipoParaUsuarioRebaixandoOutroAdmin()
     {
-        var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("outro-admin@fcg.com", tipo: TipoUsuario.Administrador);
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-rebaixa@fcg.com", tipo: TipoUsuario.Administrador);
+        var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync(
+            "outro-admin@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-rebaixa@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{alvoId}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Usuario));
+            new AlterarTipoRequest(TipoUsuario.Usuario)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
@@ -546,12 +617,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task NaoDevePermitirAdminRebaixarASiMesmo()
     {
-        var (adminId, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("autorebaixar@fcg.com", tipo: TipoUsuario.Administrador);
+        var (adminId, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "autorebaixar@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{adminId}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Usuario));
+            new AlterarTipoRequest(TipoUsuario.Usuario)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
@@ -562,15 +637,18 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     public async Task DeveRetornar400ParaTipoInvalido()
     {
         var (alvoId, _) = await _factory.CriarUsuarioAutenticadoAsync("alvo-tipo-inv@fcg.com");
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-tipo-inv@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-tipo-inv@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
-        var conteudo = new System.Net.Http.StringContent(
+        using var conteudo = new System.Net.Http.StringContent(
             "{\"tipo\":\"Root\"}",
             System.Text.Encoding.UTF8,
-            "application/json");
-        var resposta = await adminClient.PatchAsync(
-            $"/api/usuarios/{alvoId}/tipo", conteudo);
+            "application/json"
+        );
+        var resposta = await adminClient.PatchAsync($"/api/usuarios/{alvoId}/tipo", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
@@ -578,12 +656,16 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
     [Fact]
     public async Task DeveRetornar404AoAlterarTipoDeUsuarioInexistente()
     {
-        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync("admin-tipo-404@fcg.com", tipo: TipoUsuario.Administrador);
+        var (_, adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-tipo-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
         var adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
         var resposta = await adminClient.PatchAsJsonAsync(
             $"/api/usuarios/{Guid.NewGuid()}/tipo",
-            new AlterarTipoRequest(TipoUsuario.Administrador));
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }

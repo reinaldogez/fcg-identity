@@ -1,3 +1,4 @@
+#pragma warning disable S6960 // falso positivo: controller de autenticacao com 3 endpoints e granularidade correta
 using FCG.Application.DTOs;
 using FCG.Application.UseCases;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +12,8 @@ namespace FCG.API.Controllers;
 public class AuthController(
     LoginUseCase loginUseCase,
     RefreshTokenUseCase refreshTokenUseCase,
-    LogoutUseCase logoutUseCase) : ControllerBase
+    LogoutUseCase logoutUseCase
+) : ControllerBase
 {
     /// <summary>
     /// Autentica um usuário e retorna um access token JWT junto de um refresh token.
@@ -29,7 +31,8 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LoginAsync(
         [FromBody] LoginRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var resposta = await loginUseCase.ExecutarAsync(request, cancellationToken);
         return Ok(resposta);
@@ -52,7 +55,8 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> RefreshAsync(
         [FromBody] RefreshTokenRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var resposta = await refreshTokenUseCase.ExecutarAsync(request, cancellationToken);
         return Ok(resposta);
@@ -73,7 +77,8 @@ public class AuthController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> LogoutAsync(
         [FromBody] LogoutRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         await logoutUseCase.ExecutarAsync(request, cancellationToken);
         return NoContent();

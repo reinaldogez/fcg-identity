@@ -15,7 +15,11 @@ public class ActivityEnricher : ILogEventEnricher
             return;
         }
 
-        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("TraceId", activity.TraceId.ToHexString()));
-        logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty("SpanId", activity.SpanId.ToHexString()));
+        logEvent.AddPropertyIfAbsent(
+            propertyFactory.CreateProperty("TraceId", activity.TraceId.ToHexString())
+        );
+        logEvent.AddPropertyIfAbsent(
+            propertyFactory.CreateProperty("SpanId", activity.SpanId.ToHexString())
+        );
     }
 }

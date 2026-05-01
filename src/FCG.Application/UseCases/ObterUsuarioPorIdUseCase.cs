@@ -7,7 +7,8 @@ public class ObterUsuarioPorIdUseCase(IUsuarioRepository repositorio)
 {
     public async Task<UsuarioResponse?> ExecutarAsync(
         Guid id,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
 
@@ -20,6 +21,7 @@ public class ObterUsuarioPorIdUseCase(IUsuarioRepository repositorio)
             usuario.Email.Endereco,
             usuario.Tipo.ToString(),
             usuario.DataCriacao,
-            usuario.Ativo);
+            usuario.Ativo
+        );
     }
 }

@@ -17,8 +17,11 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
     {
         var request = new CadastrarUsuarioRequest("Usuario Teste", email, senha);
         HttpResponseMessage resposta = await client.PostAsJsonAsync("/api/usuarios", request);
-        resposta.IsSuccessStatusCode.Should().BeTrue(
-            $"pré-condição: cadastro de '{email}' deveria ter retornado 2xx, mas retornou {(int)resposta.StatusCode}");
+        resposta
+            .IsSuccessStatusCode.Should()
+            .BeTrue(
+                $"pré-condição: cadastro de '{email}' deveria ter retornado 2xx, mas retornou {(int)resposta.StatusCode}"
+            );
     }
 
     [Given(@"que tenho um refresh token valido para ""(.*)"" com senha ""(.*)""")]
@@ -27,8 +30,9 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
         await DadoQueExisteUmUsuarioComEmailESenha(email, senha);
         await QuandoEuFacoLoginComEmailESenha(email, senha);
 
-        estado.UltimaResposta!.IsSuccessStatusCode.Should().BeTrue(
-            $"pré-condição: login de '{email}' deveria ter retornado 2xx");
+        estado
+            .UltimaResposta!.IsSuccessStatusCode.Should()
+            .BeTrue($"pré-condição: login de '{email}' deveria ter retornado 2xx");
 
         string json = await estado.UltimaResposta.Content.ReadAsStringAsync();
         LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, JsonOptions);
@@ -48,7 +52,11 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
     [When(@"eu uso o refresh token para renovar o acesso")]
     public async Task QuandoEuUsoORefreshTokenParaRenovarOAcesso()
     {
-        estado.RefreshToken.Should().NotBeNullOrEmpty("pré-condição: refresh token deve estar disponível no estado do cenário");
+        estado
+            .RefreshToken.Should()
+            .NotBeNullOrEmpty(
+                "pré-condição: refresh token deve estar disponível no estado do cenário"
+            );
 
         estado.RefreshTokenAnterior = estado.RefreshToken;
 
@@ -83,7 +91,11 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
     [Then(@"o refresh token anterior nao e mais aceito")]
     public async Task EntaoORefreshTokenAnteriorNaoEMaisAceito()
     {
-        estado.RefreshTokenAnterior.Should().NotBeNullOrEmpty("pré-condição: refresh token anterior deve estar salvo no estado do cenário");
+        estado
+            .RefreshTokenAnterior.Should()
+            .NotBeNullOrEmpty(
+                "pré-condição: refresh token anterior deve estar salvo no estado do cenário"
+            );
 
         var request = new RefreshTokenRequest(estado.RefreshTokenAnterior!);
         HttpResponseMessage resposta = await client.PostAsJsonAsync("/api/auth/refresh", request);

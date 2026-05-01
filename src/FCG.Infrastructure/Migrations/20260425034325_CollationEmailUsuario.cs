@@ -19,7 +19,8 @@ namespace FCG.Infrastructure.Migrations
                 collation: "SQL_Latin1_General_CP1_CI_AS",
                 oldClrType: typeof(string),
                 oldType: "nvarchar(256)",
-                oldMaxLength: 256);
+                oldMaxLength: 256
+            );
         }
 
         /// <inheritdoc />
@@ -34,7 +35,8 @@ namespace FCG.Infrastructure.Migrations
                 oldClrType: typeof(string),
                 oldType: "nvarchar(256)",
                 oldMaxLength: 256,
-                oldCollation: "SQL_Latin1_General_CP1_CI_AS");
+                oldCollation: "SQL_Latin1_General_CP1_CI_AS"
+            );
         }
     }
 }

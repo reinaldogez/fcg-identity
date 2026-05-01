@@ -11,5 +11,8 @@ public interface IUsuarioRepository
     Task<bool> ExisteComEmailAsync(Email email, CancellationToken cancellationToken = default);
     void Atualizar(Usuario usuario);
     Task<(IReadOnlyList<Usuario> Items, int Total)> ListarPaginadoAsync(
-        int pagina, int tamanhoPagina, CancellationToken cancellationToken = default);
+        int pagina,
+        int tamanhoPagina,
+        CancellationToken cancellationToken = default
+    );
 }

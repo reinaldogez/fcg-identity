@@ -17,11 +17,15 @@ namespace FCG.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TokenHash = table.Column<string>(type: "nvarchar(64)", maxLength: 64, nullable: false),
+                    TokenHash = table.Column<string>(
+                        type: "nvarchar(64)",
+                        maxLength: 64,
+                        nullable: false
+                    ),
                     ExpiraEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     CriadoEm = table.Column<DateTime>(type: "datetime2", nullable: false),
                     RevogadoEm = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    SubstituidoPor = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    SubstituidoPor = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                 },
                 constraints: table =>
                 {
@@ -31,26 +35,29 @@ namespace FCG.Infrastructure.Migrations
                         column: x => x.UsuarioId,
                         principalTable: "Usuarios",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
+                        onDelete: ReferentialAction.Cascade
+                    );
+                }
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
                 table: "RefreshTokens",
                 column: "TokenHash",
-                unique: true);
+                unique: true
+            );
 
             migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_UsuarioId",
                 table: "RefreshTokens",
-                column: "UsuarioId");
+                column: "UsuarioId"
+            );
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "RefreshTokens");
+            migrationBuilder.DropTable(name: "RefreshTokens");
         }
     }
 }

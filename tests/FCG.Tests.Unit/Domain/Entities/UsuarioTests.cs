@@ -9,7 +9,9 @@ namespace FCG.Tests.Unit.Domain.Entities;
 public class UsuarioTests
 {
     private readonly Email _emailValido = Email.Criar("teste@email.com");
-    private readonly SenhaHash _senhaHashValida = SenhaHash.Reconstituir("$2a$11$hashFalsoParaTestes");
+    private readonly SenhaHash _senhaHashValida = SenhaHash.Reconstituir(
+        "$2a$11$hashFalsoParaTestes"
+    );
 
     [Fact]
     public void DeveCriarUsuarioComDadosValidos()
@@ -64,8 +66,7 @@ public class UsuarioTests
     {
         var acao = () => Usuario.Criar(nome!, _emailValido, _senhaHashValida);
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*nome*");
+        acao.Should().Throw<DomainException>().WithMessage("*nome*");
     }
 
     [Fact]
@@ -85,14 +86,18 @@ public class UsuarioTests
 
         var acao = () => Usuario.Criar(nome, _emailValido, _senhaHashValida);
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*máximo*");
+        acao.Should().Throw<DomainException>().WithMessage("*máximo*");
     }
 
     [Fact]
     public void DeveCriarAdministradorComTipoCorreto()
     {
-        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var admin = Usuario.Criar(
+            "Admin",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
 
         admin.Tipo.Should().Be(TipoUsuario.Administrador);
         admin.Nome.Should().Be("Admin");
@@ -106,10 +111,10 @@ public class UsuarioTests
     [InlineData("   ")]
     public void DeveRejeitarNomeVazioParaAdministrador(string? nome)
     {
-        var acao = () => Usuario.Criar(nome!, _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var acao = () =>
+            Usuario.Criar(nome!, _emailValido, _senhaHashValida, TipoUsuario.Administrador);
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*nome*");
+        acao.Should().Throw<DomainException>().WithMessage("*nome*");
     }
 
     [Fact]
@@ -215,7 +220,12 @@ public class UsuarioTests
     [Fact]
     public void DeveAlterarTipoParaUsuarioComum()
     {
-        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var usuario = Usuario.Criar(
+            "Nome",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
 
         usuario.AlterarTipo(TipoUsuario.Usuario);
 
@@ -235,7 +245,12 @@ public class UsuarioTests
     [Fact]
     public void NaoDevePermitirAdministradorRebaixarASiMesmo()
     {
-        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var admin = Usuario.Criar(
+            "Admin",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
 
         var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, admin.Id);
 
@@ -245,7 +260,12 @@ public class UsuarioTests
     [Fact]
     public void DevePermitirAdministradorRebaixarOutroAdministrador()
     {
-        var alvo = Usuario.Criar("Outro", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var alvo = Usuario.Criar(
+            "Outro",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
         var solicitanteId = Guid.NewGuid();
 
         alvo.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, solicitanteId);
@@ -256,7 +276,12 @@ public class UsuarioTests
     [Fact]
     public void DevePermitirAdministradorPromoverASiMesmoQuandoTipoIgual()
     {
-        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var admin = Usuario.Criar(
+            "Admin",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
 
         var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Administrador, admin.Id);
 
@@ -277,7 +302,12 @@ public class UsuarioTests
     [Fact]
     public void DeveRejeitarAlterarTipoSolicitadoPorComTipoInvalido()
     {
-        var admin = Usuario.Criar("Admin", _emailValido, _senhaHashValida, TipoUsuario.Administrador);
+        var admin = Usuario.Criar(
+            "Admin",
+            _emailValido,
+            _senhaHashValida,
+            TipoUsuario.Administrador
+        );
 
         var acao = () => admin.AlterarTipoSolicitadoPor((TipoUsuario)99, Guid.NewGuid());
 

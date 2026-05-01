@@ -25,8 +25,7 @@ public class SenhaTests
     {
         var acao = () => Senha.Validar(senhaTexto!);
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*obrigatória*");
+        acao.Should().Throw<DomainException>().WithMessage("*obrigatória*");
     }
 
     [Theory]
@@ -36,8 +35,7 @@ public class SenhaTests
     {
         var acao = () => Senha.Validar(senhaTexto);
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*8 caracteres*");
+        acao.Should().Throw<DomainException>().WithMessage("*8 caracteres*");
     }
 
     [Fact]
@@ -45,8 +43,7 @@ public class SenhaTests
     {
         var acao = () => Senha.Validar("12345678@");
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*letra*");
+        acao.Should().Throw<DomainException>().WithMessage("*letra*");
     }
 
     [Fact]
@@ -54,8 +51,7 @@ public class SenhaTests
     {
         var acao = () => Senha.Validar("Abcdefgh@");
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*número*");
+        acao.Should().Throw<DomainException>().WithMessage("*número*");
     }
 
     [Fact]
@@ -63,7 +59,6 @@ public class SenhaTests
     {
         var acao = () => Senha.Validar("Abcdefg1");
 
-        acao.Should().Throw<DomainException>()
-            .WithMessage("*caractere especial*");
+        acao.Should().Throw<DomainException>().WithMessage("*caractere especial*");
     }
 }

@@ -8,14 +8,19 @@ namespace FCG.Application.UseCases;
 public class LogoutUseCase(
     IRefreshTokenRepository refreshTokenRepository,
     IJwtTokenService jwtTokenService,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork
+)
 {
     public async Task ExecutarAsync(
         LogoutRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         string hash = jwtTokenService.CalcularHashRefreshToken(request.RefreshToken);
-        RefreshToken? token = await refreshTokenRepository.ObterPorHashAsync(hash, cancellationToken);
+        RefreshToken? token = await refreshTokenRepository.ObterPorHashAsync(
+            hash,
+            cancellationToken
+        );
 
         if (token is null || token.RevogadoEm is not null)
         {

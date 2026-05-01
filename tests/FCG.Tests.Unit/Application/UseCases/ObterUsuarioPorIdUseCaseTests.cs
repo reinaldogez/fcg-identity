@@ -66,6 +66,7 @@ public class ObterUsuarioPorIdUseCaseTests
 
         _repositorioMock.Verify(
             r => r.ObterPorIdAsync(id, It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 }

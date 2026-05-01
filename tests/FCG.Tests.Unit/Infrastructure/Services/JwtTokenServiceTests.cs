@@ -26,7 +26,7 @@ public class JwtTokenServiceTests
         Audience = Audience,
         SigningKey = SigningKey,
         AccessTokenExpirationMinutes = 60,
-        RefreshTokenExpirationDays = 7
+        RefreshTokenExpirationDays = 7,
     };
 
     private readonly JwtTokenService _service;
@@ -38,7 +38,8 @@ public class JwtTokenServiceTests
         _usuario = Usuario.Criar(
             "João Silva",
             Email.Criar("joao@email.com"),
-            SenhaHash.Reconstituir("$2a$11$hash"));
+            SenhaHash.Reconstituir("$2a$11$hash")
+        );
     }
 
     [Fact]
@@ -56,7 +57,11 @@ public class JwtTokenServiceTests
         var resultado = _service.GerarAccessToken(_usuario);
         var token = LerToken(resultado.Token);
 
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Email && c.Value == _usuario.Email.Endereco);
+        token
+            .Claims.Should()
+            .Contain(c =>
+                c.Type == JwtRegisteredClaimNames.Email && c.Value == _usuario.Email.Endereco
+            );
     }
 
     [Fact]
@@ -65,7 +70,9 @@ public class JwtTokenServiceTests
         var resultado = _service.GerarAccessToken(_usuario);
         var token = LerToken(resultado.Token);
 
-        token.Claims.Should().Contain(c => c.Type == JwtRegisteredClaimNames.Name && c.Value == _usuario.Nome);
+        token
+            .Claims.Should()
+            .Contain(c => c.Type == JwtRegisteredClaimNames.Name && c.Value == _usuario.Nome);
     }
 
     [Fact]
@@ -74,7 +81,9 @@ public class JwtTokenServiceTests
         var resultado = _service.GerarAccessToken(_usuario);
         var token = LerToken(resultado.Token);
 
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TipoUsuario.Usuario.ToString());
+        token
+            .Claims.Should()
+            .Contain(c => c.Type == ClaimTypes.Role && c.Value == TipoUsuario.Usuario.ToString());
     }
 
     [Fact]
@@ -84,12 +93,17 @@ public class JwtTokenServiceTests
             "Admin",
             Email.Criar("admin@email.com"),
             SenhaHash.Reconstituir("$2a$11$hash"),
-            TipoUsuario.Administrador);
+            TipoUsuario.Administrador
+        );
 
         var resultado = _service.GerarAccessToken(admin);
         var token = LerToken(resultado.Token);
 
-        token.Claims.Should().Contain(c => c.Type == ClaimTypes.Role && c.Value == TipoUsuario.Administrador.ToString());
+        token
+            .Claims.Should()
+            .Contain(c =>
+                c.Type == ClaimTypes.Role && c.Value == TipoUsuario.Administrador.ToString()
+            );
     }
 
     [Fact]
@@ -108,7 +122,9 @@ public class JwtTokenServiceTests
     {
         var resultado = _service.GerarAccessToken(_usuario);
 
-        resultado.ExpiraEm.Should().BeCloseTo(DateTime.UtcNow.AddMinutes(60), TimeSpan.FromSeconds(5));
+        resultado
+            .ExpiraEm.Should()
+            .BeCloseTo(DateTime.UtcNow.AddMinutes(60), TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -153,7 +169,7 @@ public class JwtTokenServiceTests
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SigningKey)),
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero,
         };
 
         var acao = () => handler.ValidateToken(resultado.Token, parametros, out _);

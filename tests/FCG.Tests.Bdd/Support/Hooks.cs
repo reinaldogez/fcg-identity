@@ -30,10 +30,12 @@ public class Hooks(IObjectContainer objectContainer)
     {
         await _factory.ResetarBancoAsync();
 
-        HttpClient client = _factory.CreateClient(new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
+        HttpClient client = _factory.CreateClient(
+            new Microsoft.AspNetCore.Mvc.Testing.WebApplicationFactoryClientOptions
+            {
+                AllowAutoRedirect = false,
+            }
+        );
 
         objectContainer.RegisterInstanceAs(client);
         objectContainer.RegisterInstanceAs(new CenarioEstado());

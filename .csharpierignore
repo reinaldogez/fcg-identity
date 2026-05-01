@@ -1,0 +1,5 @@
+*.props
+*.targets
+*.csproj
+*.slnx
+*.sln

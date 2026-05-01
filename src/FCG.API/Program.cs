@@ -4,9 +4,6 @@ using System.Text;
 using System.Threading.RateLimiting;
 using FCG.API.Authorization;
 using FCG.API.Logging;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Serilog;
 using FCG.API.Middlewares;
 using FCG.API.OpenApi;
 using FCG.Application.Interfaces;
@@ -22,30 +19,38 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSerilog((services, lc) => lc
-    .ReadFrom.Configuration(builder.Configuration)
-    .ReadFrom.Services(services)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .Enrich.WithEnvironmentName()
-    .Enrich.WithProperty("Application", "FCG.API")
-    .Enrich.With<ActivityEnricher>());
+builder.Services.AddSerilog(
+    (services, lc) =>
+        lc
+            .ReadFrom.Configuration(builder.Configuration)
+            .ReadFrom.Services(services)
+            .Enrich.FromLogContext()
+            .Enrich.WithMachineName()
+            .Enrich.WithEnvironmentName()
+            .Enrich.WithProperty("Application", "FCG.API")
+            .Enrich.With<ActivityEnricher>()
+);
 
-builder.Services.AddOpenTelemetry()
+builder
+    .Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService(serviceName: "FCG.API", serviceVersion: "1.0.0"))
-    .WithTracing(t => t
-        .AddAspNetCoreInstrumentation()
-        .AddConsoleExporter());
+    .WithTracing(t => t.AddAspNetCoreInstrumentation().AddConsoleExporter());
 
-builder.Services.AddControllers()
+builder
+    .Services.AddControllers()
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-        o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        o.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        );
     });
 builder.Services.AddOpenApi(options =>
 {
@@ -56,27 +61,33 @@ builder.Services.AddOpenApi(options =>
 IConfigurationSection rateLimitConfig = builder.Configuration.GetSection("RateLimit");
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter("fixed", opt =>
-    {
-        opt.PermitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
-        opt.Window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
-        opt.QueueLimit = 0;
-    });
+    options.AddFixedWindowLimiter(
+        "fixed",
+        opt =>
+        {
+            opt.PermitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
+            opt.Window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
+            opt.QueueLimit = 0;
+        }
+    );
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
-JwtSettings jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
+JwtSettings jwtSettings =
+    builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("Seção 'Jwt' não configurada.");
 
 if (jwtSettings.SigningKey.Length < 32)
 {
     throw new InvalidOperationException(
-        "Jwt:SigningKey deve ter no mínimo 32 caracteres (256 bits) para assinar tokens com HS256. Configure via user-secrets ou variável de ambiente.");
+        "Jwt:SigningKey deve ter no mínimo 32 caracteres (256 bits) para assinar tokens com HS256. Configure via user-secrets ou variável de ambiente."
+    );
 }
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
@@ -91,9 +102,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SigningKey)),
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(jwtSettings.SigningKey)
+            ),
             RoleClaimType = ClaimTypes.Role,
-            NameClaimType = JwtRegisteredClaimNames.Sub
+            NameClaimType = JwtRegisteredClaimNames.Sub,
         };
     });
 
@@ -101,17 +114,20 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IAuthorizationHandler, OwnerOrAdminHandler>();
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("OwnerOrAdmin", policy =>
-    {
-        policy.RequireAuthenticatedUser();
-        policy.AddRequirements(new OwnerOrAdminRequirement(routeParameterName: "id"));
-    });
+    options.AddPolicy(
+        "OwnerOrAdmin",
+        policy =>
+        {
+            policy.RequireAuthenticatedUser();
+            policy.AddRequirements(new OwnerOrAdminRequirement(routeParameterName: "id"));
+        }
+    );
 });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var connectionString =
+    builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
-builder.Services.AddDbContext<FcgDbContext>(options =>
-    options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<FcgDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
@@ -148,4 +164,4 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+await app.RunAsync();

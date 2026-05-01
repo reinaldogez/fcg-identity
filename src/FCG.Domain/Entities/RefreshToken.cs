@@ -4,6 +4,8 @@ namespace FCG.Domain.Entities;
 
 public class RefreshToken
 {
+    private RefreshToken() { }
+
     public Guid Id { get; private set; }
     public Guid UsuarioId { get; private set; }
     public string TokenHash { get; private set; } = null!;
@@ -11,8 +13,7 @@ public class RefreshToken
     public DateTime CriadoEm { get; private set; }
     public DateTime? RevogadoEm { get; private set; }
     public Guid? SubstituidoPor { get; private set; }
-
-    private RefreshToken() { }
+    public bool EstaAtivo => RevogadoEm is null && DateTime.UtcNow < ExpiraEm;
 
     public static RefreshToken Criar(Guid usuarioId, string tokenHash, DateTime expiraEm)
     {
@@ -33,11 +34,9 @@ public class RefreshToken
             ExpiraEm = expiraEm,
             CriadoEm = DateTime.UtcNow,
             RevogadoEm = null,
-            SubstituidoPor = null
+            SubstituidoPor = null,
         };
     }
-
-    public bool EstaAtivo => RevogadoEm is null && DateTime.UtcNow < ExpiraEm;
 
     public void Revogar()
     {

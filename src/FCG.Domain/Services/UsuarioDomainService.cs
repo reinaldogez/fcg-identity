@@ -8,8 +8,11 @@ namespace FCG.Domain.Services;
 public class UsuarioDomainService(IUsuarioRepository repositorio) : IUsuarioDomainService
 {
     public async Task<Usuario> RegistrarAsync(
-        string nome, Email email, SenhaHash senhaHash,
-        CancellationToken cancellationToken = default)
+        string nome,
+        Email email,
+        SenhaHash senhaHash,
+        CancellationToken cancellationToken = default
+    )
     {
         if (await repositorio.ExisteComEmailAsync(email, cancellationToken))
         {
@@ -20,15 +23,18 @@ public class UsuarioDomainService(IUsuarioRepository repositorio) : IUsuarioDoma
     }
 
     public async Task AtualizarDadosAsync(
-        Usuario usuario, string novoNome, Email novoEmail,
-        CancellationToken cancellationToken = default)
+        Usuario usuario,
+        string novoNome,
+        Email novoEmail,
+        CancellationToken cancellationToken = default
+    )
     {
-        if (usuario.Email != novoEmail)
+        if (
+            usuario.Email != novoEmail
+            && await repositorio.ExisteComEmailAsync(novoEmail, cancellationToken)
+        )
         {
-            if (await repositorio.ExisteComEmailAsync(novoEmail, cancellationToken))
-            {
-                throw new DomainConflictException("Já existe um usuário cadastrado com este e-mail.");
-            }
+            throw new DomainConflictException("Já existe um usuário cadastrado com este e-mail.");
         }
 
         usuario.AlterarDados(novoNome, novoEmail);

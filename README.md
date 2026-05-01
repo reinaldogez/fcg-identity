@@ -14,13 +14,18 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
     - [4. Aplicar as migrations](#4-aplicar-as-migrations)
     - [5. Rodar a API](#5-rodar-a-api)
   - [CI/CD (GitHub Actions)](#cicd-github-actions)
-    - [Secrets obrigatórios no repositório](#secrets-obrigatórios-no-repositório)
+    - [Secrets no repositório](#secrets-no-repositório)
   - [Como rodar os testes](#como-rodar-os-testes)
   - [Autenticação e Autorização](#autenticação-e-autorização)
     - [Fluxo](#fluxo)
     - [Endpoints de `UsuarioController`](#endpoints-de-usuariocontroller)
     - [Smoke test pelo Scalar](#smoke-test-pelo-scalar)
   - [Observabilidade](#observabilidade)
+  - [Qualidade de código](#qualidade-de-código)
+    - [Analyzers (build e IDE)](#analyzers-build-e-ide)
+    - [Formatação (CSharpier)](#formatação-csharpier)
+    - [Pre-commit hook (Husky)](#pre-commit-hook-husky)
+    - [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)
 
 ## Sobre o projeto
 
@@ -65,7 +70,6 @@ tests/
   FCG.Tests.Unit          → Unitários para Domain, Application e Middlewares.
   FCG.Tests.Integration   → Integração end-to-end com WebApplicationFactory + Testcontainers (SQL Server real em Docker).
   FCG.Tests.Bdd           → BDD com Reqnroll: cenários Gherkin (PT-BR) para os módulos de cadastro e autenticação.
-docs/                  → Event Storming, decisões arquiteturais e documentação de DDD.
 ```
 
 ## Configuração local (primeira vez)
@@ -126,16 +130,13 @@ O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda automa
 
 Os testes de integração usam Testcontainers, que sobe um SQL Server real via Docker — o runner `ubuntu-latest` já tem Docker, então funciona sem configuração extra.
 
-### Secrets obrigatórios no repositório
+Um segundo workflow, [`.github/workflows/sonar.yml`](.github/workflows/sonar.yml), roda na mesma trigger e envia a análise estática e a cobertura de testes unitários para o SonarCloud (ver seção [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)).
 
-Configure em **Settings → Secrets and variables → Actions → New repository secret**:
+### Secrets no repositório
 
-| Secret | Descrição | Exemplo |
-|---|---|---|
-| `JWT_SIGNING_KEY` | Chave de assinatura JWT usada nos testes (mínimo 32 caracteres) | `openssl rand -base64 64` |
-| `ADMIN_SEED_PASSWORD` | Senha do administrador inicial (`AdminSeed:DefaultPassword`) | `Admin@123456` |
+O CI **não depende de nenhum secret do GitHub** para rodar os testes. A `FcgApiFactory` define todas as configurações de JWT necessárias via variáveis de ambiente no construtor estático (valores hardcoded de teste), e o `AdminSeedService` é removido do DI durante os testes — portanto `AdminSeed:DefaultPassword` nunca é consumido.
 
-> Esses secrets são usados **apenas nos testes de integração** — o banco é um container efêmero e descartado ao final do job. Para um ambiente de produção real, adicione também `ConnectionStrings__DefaultConnection` e `Jwt__Issuer`/`Jwt__Audience` como secrets ou variáveis de ambiente no servidor de deploy.
+> Para um ambiente de produção real, configure `ConnectionStrings__DefaultConnection`, `Jwt__SigningKey`, `Jwt__Issuer`, `Jwt__Audience` e `AdminSeed__DefaultPassword` como secrets ou variáveis de ambiente no servidor de deploy.
 
 ## Como rodar os testes
 
@@ -204,3 +205,58 @@ Todo evento de log carrega automaticamente `TraceId`, `SpanId`, `Application`, `
 ```
 
 Respostas de erro (4xx/5xx) incluem o mesmo `traceId` no corpo (`ProblemDetails.Extensions["traceId"]`), permitindo correlacionar um erro reportado pelo cliente diretamente com o evento de log correspondente.
+
+## Qualidade de código
+
+A análise estática e a formatação são aplicadas em três camadas complementares, configuradas em [`Directory.Build.props`](Directory.Build.props) e propagadas automaticamente para todos os 7 projetos.
+
+### Analyzers (build e IDE)
+
+| Pacote | Versão | Função |
+|---|---|---|
+| **StyleCop.Analyzers** | 1.2.0-beta.556 | Convenções de estilo e nomenclatura C# |
+| **SonarAnalyzer.CSharp** | 10.25.0.139117 | Detecção de bugs, code smells e vulnerabilidades |
+| **Roslyn built-in** | (`AnalysisMode=All`) | Regras de performance, confiabilidade e uso da BCL |
+
+Todas as regras rodam em tempo de build — os warnings aparecem no IDE e no output do `dotnet build`. Regras que conflitam com as convenções do projeto (por exemplo: SA1309 que proíbe `_` em campos privados, sendo que o projeto usa `_camelCase`) estão suprimidas com justificativa em [`Directory.Build.props`](Directory.Build.props). `EnforceCodeStyleInBuild=true` garante que as regras do `.editorconfig` também sejam verificadas no build, não apenas no IDE.
+
+### Formatação (CSharpier)
+
+**CSharpier** (1.2.6) é o formatador oficial do projeto. Seguindo o modelo do Prettier, ele aplica um estilo único e não-configurável, eliminando debates de formatação:
+
+```bash
+dotnet tool restore                 # instala a versão fixada no manifesto
+dotnet csharpier format .           # formata todos os arquivos .cs
+dotnet csharpier check .            # verifica sem modificar (usado no CI)
+```
+
+A versão está fixada em [`.config/dotnet-tools.json`](.config/dotnet-tools.json). Qualquer desenvolvedor que rodar `dotnet tool restore` obtém exatamente a mesma versão.
+
+### Pre-commit hook (Husky)
+
+O Husky intercepta cada `git commit` e executa automaticamente:
+
+1. `dotnet csharpier check .` — rejeita o commit se algum arquivo `.cs` não estiver formatado
+2. `dotnet build --no-incremental` — rejeita o commit se o build falhar
+
+As tarefas estão definidas em [`.husky/task-runner.json`](.husky/task-runner.json). Para configurar após clonar o repositório:
+
+```bash
+dotnet tool restore       # instala csharpier e husky
+dotnet husky install      # registra o hook no git local
+```
+
+> O `dotnet husky install` precisa rodar uma vez por clone. Em equipes, recomenda-se adicionar esse comando ao script de setup do projeto.
+
+### Análise de cobertura e qualidade agregada (SonarCloud)
+
+O projeto está integrado ao **SonarCloud** para histórico de análises, métricas de cobertura e quality gates por PR. A configuração está em [`sonar-project.properties`](sonar-project.properties) e o workflow em [`.github/workflows/sonar.yml`](.github/workflows/sonar.yml).
+
+A cada push ou PR o workflow:
+
+1. Inicia a análise com `dotnet-sonarscanner begin`
+2. Faz o build completo em modo `Release`
+3. Coleta cobertura dos testes unitários com `dotnet-coverage` (formato OpenCover)
+4. Finaliza com `dotnet-sonarscanner end` e envia os resultados ao SonarCloud
+
+Migrations, `obj/` e `bin/` são excluídos da análise via `sonar.exclusions`. O secret `SONAR_TOKEN` precisa estar configurado em `Settings → Secrets → Actions` do repositório.

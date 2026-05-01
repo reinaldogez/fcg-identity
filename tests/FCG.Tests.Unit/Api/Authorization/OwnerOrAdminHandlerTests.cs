@@ -19,7 +19,8 @@ public class OwnerOrAdminHandlerTests
     {
         ClaimsPrincipal principal = CriarPrincipal(
             sub: Guid.NewGuid().ToString(),
-            role: TipoUsuario.Administrador.ToString());
+            role: TipoUsuario.Administrador.ToString()
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: Guid.NewGuid().ToString());
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -33,7 +34,10 @@ public class OwnerOrAdminHandlerTests
     public async Task DevePermitirQuandoSubDoTokenIgualAoIdDaRota()
     {
         Guid id = Guid.NewGuid();
-        ClaimsPrincipal principal = CriarPrincipal(sub: id.ToString(), role: TipoUsuario.Usuario.ToString());
+        ClaimsPrincipal principal = CriarPrincipal(
+            sub: id.ToString(),
+            role: TipoUsuario.Usuario.ToString()
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: id.ToString());
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -48,7 +52,8 @@ public class OwnerOrAdminHandlerTests
     {
         ClaimsPrincipal principal = CriarPrincipal(
             sub: Guid.NewGuid().ToString(),
-            role: TipoUsuario.Usuario.ToString());
+            role: TipoUsuario.Usuario.ToString()
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: Guid.NewGuid().ToString());
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -61,7 +66,12 @@ public class OwnerOrAdminHandlerTests
     [Fact]
     public async Task NaoDevePermitirQuandoSubAusente()
     {
-        ClaimsPrincipal principal = new(new ClaimsIdentity([new Claim(ClaimTypes.Role, TipoUsuario.Usuario.ToString())], "Bearer"));
+        ClaimsPrincipal principal = new(
+            new ClaimsIdentity(
+                [new Claim(ClaimTypes.Role, TipoUsuario.Usuario.ToString())],
+                "Bearer"
+            )
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: Guid.NewGuid().ToString());
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -76,7 +86,8 @@ public class OwnerOrAdminHandlerTests
     {
         ClaimsPrincipal principal = CriarPrincipal(
             sub: Guid.NewGuid().ToString(),
-            role: TipoUsuario.Usuario.ToString());
+            role: TipoUsuario.Usuario.ToString()
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: null);
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -89,7 +100,10 @@ public class OwnerOrAdminHandlerTests
     [Fact]
     public async Task NaoDevePermitirQuandoSubInvalido()
     {
-        ClaimsPrincipal principal = CriarPrincipal(sub: "nao-eh-guid", role: TipoUsuario.Usuario.ToString());
+        ClaimsPrincipal principal = CriarPrincipal(
+            sub: "nao-eh-guid",
+            role: TipoUsuario.Usuario.ToString()
+        );
         OwnerOrAdminHandler handler = CriarHandler(routeId: Guid.NewGuid().ToString());
 
         AuthorizationHandlerContext context = new([_requirement], principal, resource: null);
@@ -102,13 +116,11 @@ public class OwnerOrAdminHandlerTests
     private static ClaimsPrincipal CriarPrincipal(string sub, string role)
     {
         ClaimsIdentity identity = new(
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, sub),
-                new Claim(ClaimTypes.Role, role)
-            ],
+            [new Claim(JwtRegisteredClaimNames.Sub, sub), new Claim(ClaimTypes.Role, role)],
             authenticationType: "Bearer",
             nameType: JwtRegisteredClaimNames.Sub,
-            roleType: ClaimTypes.Role);
+            roleType: ClaimTypes.Role
+        );
 
         return new ClaimsPrincipal(identity);
     }

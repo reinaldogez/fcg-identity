@@ -13,36 +13,27 @@ public class UsuarioConfig : IEntityTypeConfiguration<Usuario>
 
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.Nome)
-            .IsRequired()
-            .HasMaxLength(Usuario.NomeTamanhoMaximo);
+        builder.Property(u => u.Nome).IsRequired().HasMaxLength(Usuario.NomeTamanhoMaximo);
 
-        builder.Property(u => u.Email)
-            .HasConversion(
-                email => email.Endereco,
-                endereco => Email.Reconstituir(endereco))
+        builder
+            .Property(u => u.Email)
+            .HasConversion(email => email.Endereco, endereco => Email.Reconstituir(endereco))
             .IsRequired()
             .HasMaxLength(256)
             .UseCollation("SQL_Latin1_General_CP1_CI_AS");
 
-        builder.HasIndex(u => u.Email)
-            .IsUnique();
+        builder.HasIndex(u => u.Email).IsUnique();
 
-        builder.Property(u => u.SenhaHash)
-            .HasConversion(
-                hash => hash.Valor,
-                valor => SenhaHash.Reconstituir(valor))
+        builder
+            .Property(u => u.SenhaHash)
+            .HasConversion(hash => hash.Valor, valor => SenhaHash.Reconstituir(valor))
             .IsRequired()
             .HasMaxLength(500);
 
-        builder.Property(u => u.Tipo)
-            .IsRequired();
+        builder.Property(u => u.Tipo).IsRequired();
 
-        builder.Property(u => u.DataCriacao)
-            .IsRequired();
+        builder.Property(u => u.DataCriacao).IsRequired();
 
-        builder.Property(u => u.Ativo)
-            .IsRequired()
-            .HasDefaultValue(true);
+        builder.Property(u => u.Ativo).IsRequired().HasDefaultValue(true);
     }
 }

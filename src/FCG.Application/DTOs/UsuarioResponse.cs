@@ -6,4 +6,5 @@ public record UsuarioResponse(
     string Email,
     string Tipo,
     DateTime DataCriacao,
-    bool Ativo);
+    bool Ativo
+);

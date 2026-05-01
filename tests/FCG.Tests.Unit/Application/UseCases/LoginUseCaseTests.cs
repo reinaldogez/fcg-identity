@@ -27,7 +27,8 @@ public class LoginUseCaseTests
         _usuario = Usuario.Criar(
             "João Silva",
             Email.Criar("joao@email.com"),
-            SenhaHash.Reconstituir("$2a$11$hash"));
+            SenhaHash.Reconstituir("$2a$11$hash")
+        );
 
         _jwtTokenServiceMock
             .Setup(s => s.GerarAccessToken(It.IsAny<Usuario>()))
@@ -35,14 +36,17 @@ public class LoginUseCaseTests
 
         _jwtTokenServiceMock
             .Setup(s => s.GerarRefreshToken())
-            .Returns(new RefreshTokenGerado("refresh-plain", "refresh-hash", DateTime.UtcNow.AddDays(7)));
+            .Returns(
+                new RefreshTokenGerado("refresh-plain", "refresh-hash", DateTime.UtcNow.AddDays(7))
+            );
 
         _useCase = new LoginUseCase(
             _usuarioRepositoryMock.Object,
             _refreshRepositoryMock.Object,
             _senhaServiceMock.Object,
             _jwtTokenServiceMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object
+        );
     }
 
     [Fact]
@@ -50,7 +54,9 @@ public class LoginUseCaseTests
     {
         ConfigurarLoginValido();
 
-        LoginResponse resposta = await _useCase.ExecutarAsync(new LoginRequest("joao@email.com", "Senh@123"));
+        LoginResponse resposta = await _useCase.ExecutarAsync(
+            new LoginRequest("joao@email.com", "Senh@123")
+        );
 
         resposta.AccessToken.Should().Be("token-jwt");
         resposta.TokenType.Should().Be("Bearer");
@@ -73,7 +79,10 @@ public class LoginUseCaseTests
         capturado.Should().NotBeNull();
         capturado!.UsuarioId.Should().Be(_usuario.Id);
         capturado.TokenHash.Should().Be("refresh-hash");
-        _unitOfWorkMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(
+            u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -83,12 +92,14 @@ public class LoginUseCaseTests
             .Setup(r => r.ObterPorEmailAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest("nao-existe@email.com", "Senh@123"));
+        Func<Task> acao = () =>
+            _useCase.ExecutarAsync(new LoginRequest("nao-existe@email.com", "Senh@123"));
 
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemEsperada);
         _refreshRepositoryMock.Verify(
             r => r.AdicionarAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -99,7 +110,8 @@ public class LoginUseCaseTests
             .Setup(r => r.ObterPorEmailAsync(It.IsAny<Email>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(_usuario);
 
-        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest("joao@email.com", "Senh@123"));
+        Func<Task> acao = () =>
+            _useCase.ExecutarAsync(new LoginRequest("joao@email.com", "Senh@123"));
 
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemEsperada);
     }
@@ -114,7 +126,8 @@ public class LoginUseCaseTests
             .Setup(s => s.VerificarSenha(It.IsAny<string>(), It.IsAny<SenhaHash>()))
             .Returns(false);
 
-        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest("joao@email.com", "errada"));
+        Func<Task> acao = () =>
+            _useCase.ExecutarAsync(new LoginRequest("joao@email.com", "errada"));
 
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemEsperada);
     }
@@ -122,7 +135,8 @@ public class LoginUseCaseTests
     [Fact]
     public async Task DeveLancarDomainAuthExceptionQuandoEmailMalFormatado()
     {
-        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest("nao-eh-email", "Senh@123"));
+        Func<Task> acao = () =>
+            _useCase.ExecutarAsync(new LoginRequest("nao-eh-email", "Senh@123"));
 
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemEsperada);
     }
@@ -130,7 +144,7 @@ public class LoginUseCaseTests
     [Fact]
     public async Task DeveLancarDomainAuthExceptionQuandoEmailVazio()
     {
-        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest("", "Senh@123"));
+        Func<Task> acao = () => _useCase.ExecutarAsync(new LoginRequest(string.Empty, "Senh@123"));
 
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemEsperada);
     }

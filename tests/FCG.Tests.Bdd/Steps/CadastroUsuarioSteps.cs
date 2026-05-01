@@ -17,12 +17,19 @@ public class CadastroUsuarioSteps(HttpClient client, CenarioEstado estado)
     {
         var request = new CadastrarUsuarioRequest("Usuario Existente", email, senha);
         HttpResponseMessage resposta = await client.PostAsJsonAsync("/api/usuarios", request);
-        resposta.IsSuccessStatusCode.Should().BeTrue(
-            $"pré-condição: cadastro de '{email}' deveria ter retornado 2xx, mas retornou {(int)resposta.StatusCode}");
+        resposta
+            .IsSuccessStatusCode.Should()
+            .BeTrue(
+                $"pré-condição: cadastro de '{email}' deveria ter retornado 2xx, mas retornou {(int)resposta.StatusCode}"
+            );
     }
 
     [When(@"eu cadastro um usuario com nome ""(.*)"", email ""(.*)"" e senha ""(.*)""")]
-    public async Task QuandoEuCadastroUmUsuarioComNomeEmailESenha(string nome, string email, string senha)
+    public async Task QuandoEuCadastroUmUsuarioComNomeEmailESenha(
+        string nome,
+        string email,
+        string senha
+    )
     {
         var request = new CadastrarUsuarioRequest(nome, email, senha);
         estado.UltimaResposta = await client.PostAsJsonAsync("/api/usuarios", request);

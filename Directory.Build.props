@@ -1,0 +1,75 @@
+<Project>
+  <PropertyGroup>
+    <AnalysisMode>All</AnalysisMode>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <NoWarn>
+      $(NoWarn);
+
+      <!-- StyleCop: conflitos diretos com convencoes do projeto -->
+      <!-- SA1200: usings fora do namespace — projeto usa outside_namespace -->
+      <!-- SA1101: exige this. — projeto proibe qualificacao com this. -->
+      <!-- SA1309: proibe _ em campos — projeto exige _camelCase (allowUnderscorePrefix nao funciona nesta versao) -->
+      <!-- SA1633: exige cabecalho de arquivo — projeto nao usa cabecalhos -->
+      SA1200;SA1101;SA1309;SA1633;
+
+      <!-- StyleCop: documentacao — projeto nao exige XML doc em todos os membros -->
+      SA1600;SA1601;SA1602;SA1611;SA1615;SA1618;SA1623;SA1629;
+
+      <!-- StyleCop: formatacao — convencoes do projeto diferem -->
+      <!-- SA1413: trailing comma em inicializadores — nao e convencao do projeto -->
+      <!-- SA1516: linha em branco entre membros — propriedades agrupadas sem espaco e padrao aqui -->
+      <!-- SA1512: linha em branco apos comentario unico de linha -->
+      <!-- SA1116: primeiro parametro em linha propria — muito rigido para este codebase -->
+      <!-- SA1117: parametros devem estar todos na mesma linha ou em linhas separadas -->
+      <!-- SA1128: put constructor initializers on their own line -->
+      <!-- SA1503: braces omitidos em guard clauses — padrao intencional no projeto (if + throw) -->
+      <!-- SA1502: elemento em linha unica — construtores privados vazios para EF Core e idioma estabelecido -->
+      <!-- SA1501: statement em linha unica — relacionado ao SA1502 -->
+      <!-- SA1009: parentese de fechamento precedido de espaco/nova linha — padrao do CSharpier -->
+      <!-- SA1111: parentese de fechamento na linha do ultimo parametro — padrao do CSharpier e diferente -->
+      <!-- SA1137: indentacao inconsistente — causada pela formatacao de atributos embutidos do CSharpier -->
+      SA1413;SA1516;SA1512;SA1116;SA1117;SA1128;SA1503;SA1502;SA1501;SA1009;SA1111;SA1137;
+
+      <!-- CA2007: ConfigureAwait — desnecessario em aplicacoes ASP.NET Core -->
+      CA2007;
+
+      <!-- CA1062: validar parametros nao-nulos — ja configurado como suggestion no .editorconfig -->
+      CA1062;
+
+      <!-- CA2234: usar Uri em vez de string — falsos positivos em controllers ASP.NET -->
+      CA2234;
+
+      <!-- CA1515: tipos publicos em assemblies — nao se aplica a aplicacoes (so a libs) -->
+      CA1515;
+
+      <!-- CA1848: usar LoggerMessage delegates — valido mas verboso, ruido excessivo por ora -->
+      CA1848;
+
+      <!-- CA1812: classe interna nao instanciada — falsos positivos com injecao de dependencia -->
+      CA1812;
+
+      <!-- CA1032: construtores padrao de exception — design intencional: exceptions de dominio so aceitam mensagem -->
+      <!-- SA0001: erros de documentacao XML — consequencia das regras de doc suprimidas acima -->
+      CA1032;SA0001
+
+
+    </NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" Link="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.556">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.25.0.139117">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

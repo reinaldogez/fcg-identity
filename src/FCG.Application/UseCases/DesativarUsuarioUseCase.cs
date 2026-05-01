@@ -2,9 +2,7 @@ using FCG.Domain.Interfaces;
 
 namespace FCG.Application.UseCases;
 
-public class DesativarUsuarioUseCase(
-    IUsuarioRepository repositorio,
-    IUnitOfWork unitOfWork)
+public class DesativarUsuarioUseCase(IUsuarioRepository repositorio, IUnitOfWork unitOfWork)
 {
     public async Task<bool> ExecutarAsync(Guid id, CancellationToken cancellationToken = default)
     {

@@ -20,9 +20,7 @@ public class LogoutUseCaseTests
 
     public LogoutUseCaseTests()
     {
-        _jwtMock
-            .Setup(j => j.CalcularHashRefreshToken(Plaintext))
-            .Returns(Hash);
+        _jwtMock.Setup(j => j.CalcularHashRefreshToken(Plaintext)).Returns(Hash);
 
         _useCase = new LogoutUseCase(_refreshRepoMock.Object, _jwtMock.Object, _uowMock.Object);
     }
@@ -66,5 +64,4 @@ public class LogoutUseCaseTests
 
         _uowMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
-
 }

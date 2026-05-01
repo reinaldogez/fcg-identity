@@ -1,3 +1,4 @@
+#pragma warning disable S6960 // falso positivo: 7 endpoints CRUD de um unico agregado e granularidade normal em APIs REST
 using System.ComponentModel.DataAnnotations;
 using System.IdentityModel.Tokens.Jwt;
 using FCG.Application.DTOs;
@@ -18,7 +19,8 @@ public class UsuarioController(
     AtualizarUsuarioUseCase atualizarUsuarioUseCase,
     AlterarSenhaUseCase alterarSenhaUseCase,
     DesativarUsuarioUseCase desativarUsuarioUseCase,
-    AlterarTipoUsuarioUseCase alterarTipoUsuarioUseCase) : ControllerBase
+    AlterarTipoUsuarioUseCase alterarTipoUsuarioUseCase
+) : ControllerBase
 {
     /// <summary>
     /// Cadastra um novo usuário na plataforma.
@@ -38,7 +40,8 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CadastrarAsync(
         [FromBody] CadastrarUsuarioRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var resposta = await cadastrarUsuarioUseCase.ExecutarAsync(request, cancellationToken);
         return CreatedAtRoute("ObterUsuarioPorId", new { id = resposta.Id }, resposta);
@@ -63,9 +66,7 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> ObterPorIdAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var resposta = await obterUsuarioPorIdUseCase.ExecutarAsync(id, cancellationToken);
 
@@ -96,11 +97,20 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ListarAsync(
-        [FromQuery][Range(1, int.MaxValue, ErrorMessage = "A página deve ser maior ou igual a 1.")] int pagina = 1,
-        [FromQuery][Range(1, 100, ErrorMessage = "O tamanho da página deve estar entre 1 e 100.")] int tamanhoPagina = 20,
-        CancellationToken cancellationToken = default)
+        [FromQuery]
+        [Range(1, int.MaxValue, ErrorMessage = "A página deve ser maior ou igual a 1.")]
+            int pagina = 1,
+        [FromQuery]
+        [Range(1, 100, ErrorMessage = "O tamanho da página deve estar entre 1 e 100.")]
+            int tamanhoPagina = 20,
+        CancellationToken cancellationToken = default
+    )
     {
-        var resposta = await listarUsuariosUseCase.ExecutarAsync(pagina, tamanhoPagina, cancellationToken);
+        var resposta = await listarUsuariosUseCase.ExecutarAsync(
+            pagina,
+            tamanhoPagina,
+            cancellationToken
+        );
         return Ok(resposta);
     }
 
@@ -131,7 +141,8 @@ public class UsuarioController(
     public async Task<IActionResult> AtualizarAsync(
         Guid id,
         [FromBody] AtualizarUsuarioRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var resposta = await atualizarUsuarioUseCase.ExecutarAsync(id, request, cancellationToken);
         if (resposta is null)
@@ -165,7 +176,8 @@ public class UsuarioController(
     public async Task<IActionResult> AlterarSenhaAsync(
         Guid id,
         [FromBody] AlterarSenhaRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         bool encontrado = await alterarSenhaUseCase.ExecutarAsync(id, request, cancellationToken);
         if (!encontrado)
@@ -193,9 +205,7 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public async Task<IActionResult> DesativarAsync(
-        Guid id,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> DesativarAsync(Guid id, CancellationToken cancellationToken)
     {
         bool encontrado = await desativarUsuarioUseCase.ExecutarAsync(id, cancellationToken);
         if (!encontrado)
@@ -229,10 +239,16 @@ public class UsuarioController(
     public async Task<IActionResult> AlterarTipoAsync(
         Guid id,
         [FromBody] AlterarTipoRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         Guid solicitanteId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
-        var resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(id, solicitanteId, request, cancellationToken);
+        var resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(
+            id,
+            solicitanteId,
+            request,
+            cancellationToken
+        );
         if (resposta is null)
             return NotFound();
 

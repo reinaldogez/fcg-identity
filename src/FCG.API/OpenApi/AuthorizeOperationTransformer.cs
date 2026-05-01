@@ -11,7 +11,8 @@ public class AuthorizeOperationTransformer : IOpenApiOperationTransformer
     public Task TransformAsync(
         OpenApiOperation operation,
         OpenApiOperationTransformerContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         var metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
@@ -24,8 +25,8 @@ public class AuthorizeOperationTransformer : IOpenApiOperationTransformer
             [
                 new OpenApiSecurityRequirement
                 {
-                    [new OpenApiSecuritySchemeReference(SchemeId, context.Document)] = []
-                }
+                    [new OpenApiSecuritySchemeReference(SchemeId, context.Document)] = [],
+                },
             ];
         }
 

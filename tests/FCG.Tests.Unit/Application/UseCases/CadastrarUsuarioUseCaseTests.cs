@@ -26,19 +26,25 @@ public class CadastrarUsuarioUseCaseTests
             .Returns(SenhaHash.Reconstituir("hash-gerado"));
 
         _domainServiceMock
-            .Setup(s => s.RegistrarAsync(
-                It.IsAny<string>(),
-                It.IsAny<Email>(),
-                It.IsAny<SenhaHash>(),
-                It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string nome, Email email, SenhaHash hash, CancellationToken _) =>
-                Usuario.Criar(nome, email, hash));
+            .Setup(s =>
+                s.RegistrarAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Email>(),
+                    It.IsAny<SenhaHash>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ReturnsAsync(
+                (string nome, Email email, SenhaHash hash, CancellationToken _) =>
+                    Usuario.Criar(nome, email, hash)
+            );
 
         _useCase = new CadastrarUsuarioUseCase(
             _domainServiceMock.Object,
             _repositorioMock.Object,
             _senhaServiceMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object
+        );
     }
 
     [Fact]
@@ -56,32 +62,37 @@ public class CadastrarUsuarioUseCaseTests
 
         _repositorioMock.Verify(
             r => r.AdicionarAsync(It.IsAny<Usuario>(), It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 
     [Fact]
     public async Task DeveRejeitarEmailDuplicado()
     {
         _domainServiceMock
-            .Setup(s => s.RegistrarAsync(
-                It.IsAny<string>(),
-                It.IsAny<Email>(),
-                It.IsAny<SenhaHash>(),
-                It.IsAny<CancellationToken>()))
-            .ThrowsAsync(new DomainConflictException("Já existe um usuário cadastrado com este e-mail."));
+            .Setup(s =>
+                s.RegistrarAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Email>(),
+                    It.IsAny<SenhaHash>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
+            .ThrowsAsync(
+                new DomainConflictException("Já existe um usuário cadastrado com este e-mail.")
+            );
 
         var request = new CadastrarUsuarioRequest("João Silva", "joao@email.com", "Senh@123");
 
         var acao = () => _useCase.ExecutarAsync(request);
 
-        await acao.Should().ThrowAsync<DomainConflictException>()
-            .WithMessage("*e-mail*");
+        await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }
 
     [Fact]
     public async Task DeveRejeitarNomeVazio()
     {
-        var request = new CadastrarUsuarioRequest("", "joao@email.com", "Senh@123");
+        var request = new CadastrarUsuarioRequest(string.Empty, "joao@email.com", "Senh@123");
 
         var acao = () => _useCase.ExecutarAsync(request);
 
@@ -127,6 +138,7 @@ public class CadastrarUsuarioUseCaseTests
 
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
 }

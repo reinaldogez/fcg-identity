@@ -7,14 +7,15 @@ public record Email
 {
     private static readonly Regex FormatoValido = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-        RegexOptions.Compiled);
-
-    public string Endereco { get; }
+        RegexOptions.Compiled
+    );
 
     private Email(string endereco)
     {
         Endereco = endereco;
     }
+
+    public string Endereco { get; }
 
     public static Email Criar(string endereco)
     {
@@ -23,7 +24,9 @@ public record Email
             throw new DomainException("O e-mail é obrigatório.");
         }
 
+#pragma warning disable CA1308 // e-mail: normalização para lowercase é o padrão correto
         endereco = endereco.Trim().ToLowerInvariant();
+#pragma warning restore CA1308
 
         if (!FormatoValido.IsMatch(endereco))
         {

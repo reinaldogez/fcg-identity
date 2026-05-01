@@ -18,12 +18,6 @@ public class DesativarUsuarioUseCaseTests
         _useCase = new DesativarUsuarioUseCase(_repositorioMock.Object, _unitOfWorkMock.Object);
     }
 
-    private static Usuario CriarUsuario() =>
-        Usuario.Criar(
-            "Nome",
-            Email.Criar("teste@email.com"),
-            SenhaHash.Reconstituir("$2a$11$hashFalso"));
-
     [Fact]
     public async Task DeveDesativarUsuarioAtivo()
     {
@@ -67,7 +61,8 @@ public class DesativarUsuarioUseCaseTests
         usuario.Ativo.Should().BeFalse();
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
@@ -82,6 +77,14 @@ public class DesativarUsuarioUseCaseTests
 
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
     }
+
+    private static Usuario CriarUsuario() =>
+        Usuario.Criar(
+            "Nome",
+            Email.Criar("teste@email.com"),
+            SenhaHash.Reconstituir("$2a$11$hashFalso")
+        );
 }

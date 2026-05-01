@@ -27,7 +27,8 @@ public class CommonSteps(CenarioEstado estado)
         ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, JsonOptions);
         problem.Should().NotBeNull();
 
-        string[] erros = problem!.Extensions["errors"]
+        string[] erros = problem!
+            .Extensions["errors"]
             .As<JsonElement>()
             .EnumerateArray()
             .Select(e => e.GetString() ?? string.Empty)
@@ -44,7 +45,8 @@ public class CommonSteps(CenarioEstado estado)
         ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, JsonOptions);
         problem.Should().NotBeNull();
 
-        string[] erros = problem!.Extensions["errors"]
+        string[] erros = problem!
+            .Extensions["errors"]
             .As<JsonElement>()
             .EnumerateArray()
             .Select(e => e.GetString() ?? string.Empty)

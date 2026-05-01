@@ -12,14 +12,6 @@ public class ListarUsuariosUseCaseTests
     private readonly Mock<IUsuarioRepository> _repositorioMock = new();
     private readonly ListarUsuariosUseCase _useCase;
 
-    private static Usuario CriarUsuario(string email = "teste@email.com")
-    {
-        return Usuario.Criar(
-            "Nome Teste",
-            Email.Criar(email),
-            SenhaHash.Reconstituir("$2a$11$hashFalso"));
-    }
-
     public ListarUsuariosUseCaseTests()
     {
         _useCase = new ListarUsuariosUseCase(_repositorioMock.Object);
@@ -49,7 +41,13 @@ public class ListarUsuariosUseCaseTests
     public async Task DeveRetornarListaVaziaQuandoNaoHaUsuarios()
     {
         _repositorioMock
-            .Setup(r => r.ListarPaginadoAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(r =>
+                r.ListarPaginadoAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((new List<Usuario>(), 0));
 
         var resultado = await _useCase.ExecutarAsync(1, 10);
@@ -64,7 +62,13 @@ public class ListarUsuariosUseCaseTests
     public async Task DeveAceitarTamanhoPaginaNoLimite(int tamanhoPagina)
     {
         _repositorioMock
-            .Setup(r => r.ListarPaginadoAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(r =>
+                r.ListarPaginadoAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((new List<Usuario>(), 0));
 
         var acao = () => _useCase.ExecutarAsync(1, tamanhoPagina);
@@ -76,13 +80,29 @@ public class ListarUsuariosUseCaseTests
     public async Task DeveChamarRepositorioComParametrosCorretos()
     {
         _repositorioMock
-            .Setup(r => r.ListarPaginadoAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .Setup(r =>
+                r.ListarPaginadoAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<CancellationToken>()
+                )
+            )
             .ReturnsAsync((new List<Usuario>(), 0));
 
         await _useCase.ExecutarAsync(2, 15);
 
         _repositorioMock.Verify(
             r => r.ListarPaginadoAsync(2, 15, It.IsAny<CancellationToken>()),
-            Times.Once);
+            Times.Once
+        );
+    }
+
+    private static Usuario CriarUsuario(string email = "teste@email.com")
+    {
+        return Usuario.Criar(
+            "Nome Teste",
+            Email.Criar(email),
+            SenhaHash.Reconstituir("$2a$11$hashFalso")
+        );
     }
 }

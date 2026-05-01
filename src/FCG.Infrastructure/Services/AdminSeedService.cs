@@ -14,7 +14,8 @@ namespace FCG.Infrastructure.Services;
 public class AdminSeedService(
     IServiceScopeFactory scopeFactory,
     IConfiguration configuration,
-    ILogger<AdminSeedService> logger) : IHostedService
+    ILogger<AdminSeedService> logger
+) : IHostedService
 {
     private const string AdminEmail = "admin@fcg.com";
     private const string AdminNome = "Administrador";
@@ -26,7 +27,8 @@ public class AdminSeedService(
         if (string.IsNullOrWhiteSpace(senha))
         {
             logger.LogWarning(
-                "AdminSeed:DefaultPassword não configurada. Seed do administrador ignorado.");
+                "AdminSeed:DefaultPassword não configurada. Seed do administrador ignorado."
+            );
             return;
         }
 
@@ -35,8 +37,10 @@ public class AdminSeedService(
         var senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
 
         var email = Email.Criar(AdminEmail);
-        bool adminExiste = await contexto.Usuarios
-            .AnyAsync(u => u.Email == email, cancellationToken);
+        bool adminExiste = await contexto.Usuarios.AnyAsync(
+            u => u.Email == email,
+            cancellationToken
+        );
 
         if (adminExiste)
         {

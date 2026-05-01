@@ -20,14 +20,14 @@ namespace FCG.Tests.Integration.Api;
 
 public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     private const string EmailUsuario = "login@fcg.com";
     private const string SenhaUsuario = "Senha@123";
     private const string NomeUsuario = "Usuario Login";
+
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+    };
 
     private readonly FcgApiFactory _factory;
     private readonly HttpClient _client;
@@ -35,10 +35,9 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     public AuthEndpointsTests(FcgApiFactory factory)
     {
         _factory = factory;
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions
-        {
-            AllowAutoRedirect = false
-        });
+        _client = factory.CreateClient(
+            new WebApplicationFactoryClientOptions { AllowAutoRedirect = false }
+        );
     }
 
     public Task InitializeAsync() => _factory.ResetarBancoAsync();
@@ -50,8 +49,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     {
         await CadastrarUsuarioAsync();
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest(EmailUsuario, SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
@@ -65,8 +66,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar401QuandoEmailNaoCadastrado()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest("inexistente@fcg.com", SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("inexistente@fcg.com", SenhaUsuario)
+        );
 
         await AssertRespostaCredenciaisInvalidasAsync(resposta);
     }
@@ -76,8 +79,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     {
         await CadastrarUsuarioAsync();
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest(EmailUsuario, "Errada@123"));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(EmailUsuario, "Errada@123")
+        );
 
         await AssertRespostaCredenciaisInvalidasAsync(resposta);
     }
@@ -88,8 +93,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         await CadastrarUsuarioAsync();
         await DesativarUsuarioNoBancoAsync(EmailUsuario);
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest(EmailUsuario, SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario)
+        );
 
         await AssertRespostaCredenciaisInvalidasAsync(resposta);
     }
@@ -97,8 +104,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar401QuandoEmailMalFormatado()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest("nao-eh-email", SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest("nao-eh-email", SenhaUsuario)
+        );
 
         await AssertRespostaCredenciaisInvalidasAsync(resposta);
     }
@@ -110,12 +119,18 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
 
         var respostas = new[]
         {
-            await _client.PostAsJsonAsync("/api/auth/login",
-                new LoginRequest("inexistente@fcg.com", SenhaUsuario)),
-            await _client.PostAsJsonAsync("/api/auth/login",
-                new LoginRequest(EmailUsuario, "Errada@123")),
-            await _client.PostAsJsonAsync("/api/auth/login",
-                new LoginRequest("formato-invalido", SenhaUsuario))
+            await _client.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest("inexistente@fcg.com", SenhaUsuario)
+            ),
+            await _client.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest(EmailUsuario, "Errada@123")
+            ),
+            await _client.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest("formato-invalido", SenhaUsuario)
+            ),
         };
 
         foreach (var resposta in respostas)
@@ -131,8 +146,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     {
         await CadastrarUsuarioAsync();
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest(EmailUsuario, SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario)
+        );
         var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
 
         var handler = new JwtSecurityTokenHandler { MapInboundClaims = false };
@@ -145,11 +162,14 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(FcgApiFactory.TestSigningKey)),
-            ClockSkew = TimeSpan.FromSeconds(5)
+                Encoding.UTF8.GetBytes(FcgApiFactory.TestSigningKey)
+            ),
+            ClockSkew = TimeSpan.FromSeconds(5),
         };
 
+#pragma warning disable CA1849 // ValidateToken não tem alternativa assíncrona no SDK
         var principal = handler.ValidateToken(body!.AccessToken, parametros, out _);
+#pragma warning restore CA1849
 
         principal.FindFirstValue(JwtRegisteredClaimNames.Email).Should().Be(EmailUsuario);
         principal.FindFirstValue(ClaimTypes.Role).Should().Be("Usuario");
@@ -163,8 +183,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         await CadastrarUsuarioAsync();
         LoginResponse login = await LoginAsync();
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions);
@@ -178,12 +200,16 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     {
         await CadastrarUsuarioAsync();
         LoginResponse login = await LoginAsync();
-        var primeira = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var primeira = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
         primeira.EnsureSuccessStatusCode();
 
-        var segunda = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var segunda = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
 
         segunda.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -191,8 +217,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRejeitarRefreshTokenInexistente()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest("token-que-nao-existe"));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest("token-que-nao-existe")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
@@ -202,10 +230,11 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar400QuandoRefreshTokenVazio()
     {
-        var conteudo = new StringContent(
+        using var conteudo = new StringContent(
             "{\"refreshToken\":\"\"}",
             Encoding.UTF8,
-            "application/json");
+            "application/json"
+        );
         var resposta = await _client.PostAsync("/api/auth/refresh", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -214,7 +243,7 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar400QuandoRefreshTokenAusente()
     {
-        var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
+        using var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
         var resposta = await _client.PostAsync("/api/auth/refresh", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -227,8 +256,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         LoginResponse login = await LoginAsync();
         await DesativarUsuarioNoBancoAsync(EmailUsuario);
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
@@ -240,8 +271,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         LoginResponse login = await LoginAsync();
         await ExpirarRefreshTokenNoBancoAsync(login.RefreshToken!);
 
-        var resposta = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
@@ -256,21 +289,27 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         await CadastrarUsuarioAsync();
         LoginResponse login = await LoginAsync();
 
-        var logout = await _client.PostAsJsonAsync("/api/auth/logout",
-            new LogoutRequest(login.RefreshToken!));
+        var logout = await _client.PostAsJsonAsync(
+            "/api/auth/logout",
+            new LogoutRequest(login.RefreshToken!)
+        );
 
         logout.StatusCode.Should().Be(HttpStatusCode.NoContent);
 
-        var refresh = await _client.PostAsJsonAsync("/api/auth/refresh",
-            new RefreshTokenRequest(login.RefreshToken!));
+        var refresh = await _client.PostAsJsonAsync(
+            "/api/auth/refresh",
+            new RefreshTokenRequest(login.RefreshToken!)
+        );
         refresh.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
 
     [Fact]
     public async Task DeveRetornar204NoLogoutComTokenInexistente()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/auth/logout",
-            new LogoutRequest("token-que-nao-existe"));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/logout",
+            new LogoutRequest("token-que-nao-existe")
+        );
 
         resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -278,10 +317,11 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar400NoLogoutComTokenVazio()
     {
-        var conteudo = new StringContent(
+        using var conteudo = new StringContent(
             "{\"refreshToken\":\"\"}",
             Encoding.UTF8,
-            "application/json");
+            "application/json"
+        );
         var resposta = await _client.PostAsync("/api/auth/logout", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -290,7 +330,7 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     [Fact]
     public async Task DeveRetornar400NoLogoutComTokenAusente()
     {
-        var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
+        using var conteudo = new StringContent("{}", Encoding.UTF8, "application/json");
         var resposta = await _client.PostAsync("/api/auth/logout", conteudo);
 
         resposta.StatusCode.Should().Be(HttpStatusCode.BadRequest);
@@ -303,8 +343,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         LoginResponse login = await LoginAsync();
         await _client.PostAsJsonAsync("/api/auth/logout", new LogoutRequest(login.RefreshToken!));
 
-        var segunda = await _client.PostAsJsonAsync("/api/auth/logout",
-            new LogoutRequest(login.RefreshToken!));
+        var segunda = await _client.PostAsJsonAsync(
+            "/api/auth/logout",
+            new LogoutRequest(login.RefreshToken!)
+        );
 
         segunda.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
@@ -327,18 +369,32 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         persistido.TokenHash.Length.Should().Be(64);
     }
 
+    private static async Task AssertRespostaCredenciaisInvalidasAsync(HttpResponseMessage resposta)
+    {
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
+        erro.Should().NotBeNull();
+        erro!.Type.Should().Be("ErroDeAutenticacao");
+        erro.Status.Should().Be(401);
+        erro.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+    }
+
     private async Task<LoginResponse> LoginAsync()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/auth/login",
-            new LoginRequest(EmailUsuario, SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(EmailUsuario, SenhaUsuario)
+        );
         resposta.EnsureSuccessStatusCode();
         return (await resposta.Content.ReadFromJsonAsync<LoginResponse>(_jsonOptions))!;
     }
 
     private async Task CadastrarUsuarioAsync()
     {
-        var resposta = await _client.PostAsJsonAsync("/api/usuarios",
-            new CadastrarUsuarioRequest(NomeUsuario, EmailUsuario, SenhaUsuario));
+        var resposta = await _client.PostAsJsonAsync(
+            "/api/usuarios",
+            new CadastrarUsuarioRequest(NomeUsuario, EmailUsuario, SenhaUsuario)
+        );
         resposta.EnsureSuccessStatusCode();
     }
 
@@ -359,19 +415,9 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         var jwt = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
         string hash = jwt.CalcularHashRefreshToken(plaintext);
         DateTime passado = DateTime.UtcNow.AddDays(-1);
-        await contexto.RefreshTokens
-            .Where(rt => rt.TokenHash == hash)
+        await contexto
+            .RefreshTokens.Where(rt => rt.TokenHash == hash)
             .ExecuteUpdateAsync(s => s.SetProperty(rt => rt.ExpiraEm, passado));
-    }
-
-    private static async Task AssertRespostaCredenciaisInvalidasAsync(HttpResponseMessage resposta)
-    {
-        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        var erro = await resposta.Content.ReadFromJsonAsync<RespostaErro>(_jsonOptions);
-        erro.Should().NotBeNull();
-        erro!.Type.Should().Be("ErroDeAutenticacao");
-        erro.Status.Should().Be(401);
-        erro.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
     }
 
     private sealed record RespostaErro(string Type, string Title, int Status, List<string> Errors);

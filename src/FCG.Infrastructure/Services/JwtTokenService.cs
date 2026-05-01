@@ -25,7 +25,7 @@ public class JwtTokenService(IOptions<JwtSettings> settings) : IJwtTokenService
             new(JwtRegisteredClaimNames.Email, usuario.Email.Endereco),
             new(JwtRegisteredClaimNames.Name, usuario.Nome),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new(ClaimTypes.Role, usuario.Tipo.ToString())
+            new(ClaimTypes.Role, usuario.Tipo.ToString()),
         };
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SigningKey));
@@ -37,7 +37,8 @@ public class JwtTokenService(IOptions<JwtSettings> settings) : IJwtTokenService
             claims: claims,
             notBefore: DateTime.UtcNow,
             expires: expiraEm,
-            signingCredentials: credentials);
+            signingCredentials: credentials
+        );
 
         string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
         int expiresInSeconds = _settings.AccessTokenExpirationMinutes * 60;

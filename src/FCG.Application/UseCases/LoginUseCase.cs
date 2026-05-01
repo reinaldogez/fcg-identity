@@ -12,13 +12,15 @@ public class LoginUseCase(
     IRefreshTokenRepository refreshTokenRepository,
     ISenhaService senhaService,
     IJwtTokenService jwtTokenService,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork
+)
 {
     private const string MensagemFalha = "Credenciais inválidas.";
 
     public async Task<LoginResponse> ExecutarAsync(
         LoginRequest request,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default
+    )
     {
         Email email;
         try
@@ -32,7 +34,8 @@ public class LoginUseCase(
             throw new DomainAuthException(MensagemFalha);
         }
 
-        Usuario usuario = await usuarioRepository.ObterPorEmailAsync(email, cancellationToken)
+        Usuario usuario =
+            await usuarioRepository.ObterPorEmailAsync(email, cancellationToken)
             ?? throw new DomainAuthException(MensagemFalha);
 
         if (!usuario.Ativo)
@@ -47,7 +50,11 @@ public class LoginUseCase(
 
         AccessToken accessToken = jwtTokenService.GerarAccessToken(usuario);
         RefreshTokenGerado refreshGerado = jwtTokenService.GerarRefreshToken();
-        RefreshToken refreshToken = RefreshToken.Criar(usuario.Id, refreshGerado.Hash, refreshGerado.ExpiraEm);
+        RefreshToken refreshToken = RefreshToken.Criar(
+            usuario.Id,
+            refreshGerado.Hash,
+            refreshGerado.ExpiraEm
+        );
 
         await refreshTokenRepository.AdicionarAsync(refreshToken, cancellationToken);
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
@@ -56,6 +63,7 @@ public class LoginUseCase(
             accessToken.Token,
             "Bearer",
             accessToken.ExpiresInSeconds,
-            refreshGerado.Plaintext);
+            refreshGerado.Plaintext
+        );
     }
 }

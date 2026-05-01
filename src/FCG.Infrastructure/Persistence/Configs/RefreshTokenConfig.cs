@@ -12,15 +12,11 @@ public class RefreshTokenConfig : IEntityTypeConfiguration<RefreshToken>
 
         builder.HasKey(rt => rt.Id);
 
-        builder.Property(rt => rt.UsuarioId)
-            .IsRequired();
+        builder.Property(rt => rt.UsuarioId).IsRequired();
 
-        builder.Property(rt => rt.TokenHash)
-            .IsRequired()
-            .HasMaxLength(64);
+        builder.Property(rt => rt.TokenHash).IsRequired().HasMaxLength(64);
 
-        builder.HasIndex(rt => rt.TokenHash)
-            .IsUnique();
+        builder.HasIndex(rt => rt.TokenHash).IsUnique();
 
         builder.HasIndex(rt => rt.UsuarioId);
 
@@ -29,7 +25,8 @@ public class RefreshTokenConfig : IEntityTypeConfiguration<RefreshToken>
         builder.Property(rt => rt.RevogadoEm).IsRequired(false);
         builder.Property(rt => rt.SubstituidoPor).IsRequired(false);
 
-        builder.HasOne<Usuario>()
+        builder
+            .HasOne<Usuario>()
             .WithMany()
             .HasForeignKey(rt => rt.UsuarioId)
             .OnDelete(DeleteBehavior.Cascade);

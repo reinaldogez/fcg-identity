@@ -9,10 +9,14 @@ namespace FCG.Application.UseCases;
 public class AlterarSenhaUseCase(
     IUsuarioRepository repositorio,
     ISenhaService senhaService,
-    IUnitOfWork unitOfWork)
+    IUnitOfWork unitOfWork
+)
 {
     public async Task<bool> ExecutarAsync(
-        Guid id, AlterarSenhaRequest request, CancellationToken cancellationToken = default)
+        Guid id,
+        AlterarSenhaRequest request,
+        CancellationToken cancellationToken = default
+    )
     {
         var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
         if (usuario is null)

@@ -10,7 +10,8 @@ public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
     public Task TransformAsync(
         OpenApiDocument document,
         OpenApiDocumentTransformerContext context,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
@@ -21,7 +22,7 @@ public class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
             Scheme = "bearer",
             BearerFormat = "JWT",
             In = ParameterLocation.Header,
-            Description = "Cole o access token JWT (sem o prefixo \"Bearer\")."
+            Description = "Cole o access token JWT (sem o prefixo \"Bearer\").",
         };
 
         return Task.CompletedTask;

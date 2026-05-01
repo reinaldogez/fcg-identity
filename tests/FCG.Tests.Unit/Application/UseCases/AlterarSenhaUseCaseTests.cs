@@ -28,11 +28,9 @@ public class AlterarSenhaUseCaseTests
         _useCase = new AlterarSenhaUseCase(
             _repositorioMock.Object,
             _senhaServiceMock.Object,
-            _unitOfWorkMock.Object);
+            _unitOfWorkMock.Object
+        );
     }
-
-    private Usuario CriarUsuario() =>
-        Usuario.Criar("Nome", Email.Criar("teste@email.com"), _senhaHashOriginal);
 
     [Fact]
     public async Task DeveAlterarSenhaQuandoSenhaAtualCorretaENovaValida()
@@ -46,10 +44,15 @@ public class AlterarSenhaUseCaseTests
             .Returns(true);
 
         var resultado = await _useCase.ExecutarAsync(
-            usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2"));
+            usuario.Id,
+            new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2")
+        );
 
         resultado.Should().BeTrue();
-        _unitOfWorkMock.Verify(u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        _unitOfWorkMock.Verify(
+            u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -60,7 +63,9 @@ public class AlterarSenhaUseCaseTests
             .ReturnsAsync((Usuario?)null);
 
         var resultado = await _useCase.ExecutarAsync(
-            Guid.NewGuid(), new AlterarSenhaRequest("Senha@1", "NovaSenha@2"));
+            Guid.NewGuid(),
+            new AlterarSenhaRequest("Senha@1", "NovaSenha@2")
+        );
 
         resultado.Should().BeFalse();
     }
@@ -76,11 +81,13 @@ public class AlterarSenhaUseCaseTests
             .Setup(s => s.VerificarSenha(It.IsAny<string>(), It.IsAny<SenhaHash>()))
             .Returns(false);
 
-        var acao = () => _useCase.ExecutarAsync(
-            usuario.Id, new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@2"));
+        var acao = () =>
+            _useCase.ExecutarAsync(
+                usuario.Id,
+                new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@2")
+            );
 
-        await acao.Should().ThrowAsync<DomainException>()
-            .WithMessage("*senha atual*");
+        await acao.Should().ThrowAsync<DomainException>().WithMessage("*senha atual*");
     }
 
     [Theory]
@@ -97,8 +104,8 @@ public class AlterarSenhaUseCaseTests
             .Setup(s => s.VerificarSenha(It.IsAny<string>(), It.IsAny<SenhaHash>()))
             .Returns(true);
 
-        var acao = () => _useCase.ExecutarAsync(
-            usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", novaSenha));
+        var acao = () =>
+            _useCase.ExecutarAsync(usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", novaSenha));
 
         await acao.Should().ThrowAsync<DomainException>();
     }
@@ -115,9 +122,14 @@ public class AlterarSenhaUseCaseTests
             .Returns(true);
 
         await _useCase.ExecutarAsync(
-            usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2"));
+            usuario.Id,
+            new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2")
+        );
 
-        _senhaServiceMock.Verify(s => s.VerificarSenha("SenhaAtual@1", _senhaHashOriginal), Times.Once);
+        _senhaServiceMock.Verify(
+            s => s.VerificarSenha("SenhaAtual@1", _senhaHashOriginal),
+            Times.Once
+        );
     }
 
     [Fact]
@@ -132,7 +144,9 @@ public class AlterarSenhaUseCaseTests
             .Returns(true);
 
         await _useCase.ExecutarAsync(
-            usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2"));
+            usuario.Id,
+            new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2")
+        );
 
         _senhaServiceMock.Verify(s => s.GerarHash("NovaSenha@2"), Times.Once);
     }
@@ -151,12 +165,21 @@ public class AlterarSenhaUseCaseTests
         try
         {
             await _useCase.ExecutarAsync(
-                usuario.Id, new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@2"));
+                usuario.Id,
+                new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@2")
+            );
         }
-        catch (DomainException) { }
+        catch (DomainException)
+        {
+            // Esperado: senha incorreta lança DomainException
+        }
 
         _unitOfWorkMock.Verify(
             u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
+
+    private Usuario CriarUsuario() =>
+        Usuario.Criar("Nome", Email.Criar("teste@email.com"), _senhaHashOriginal);
 }

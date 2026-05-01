@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -25,5 +24,4 @@
     <ProjectReference Include="..\..\src\FCG.Application\FCG.Application.csproj" />
     <ProjectReference Include="..\..\src\FCG.API\FCG.API.csproj" />
   </ItemGroup>
-
 </Project>

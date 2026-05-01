@@ -9,16 +9,12 @@ namespace FCG.Tests.Unit.Api.Middlewares;
 
 public class ErrorHandlingMiddlewareTests
 {
-    private static readonly JsonSerializerOptions _jsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
-
     [Fact]
     public async Task DeveMapearDomainConflictExceptionParaStatus409()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainConflictException("E-mail já cadastrado."));
+            new DomainConflictException("E-mail já cadastrado.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
     }
@@ -27,7 +23,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveMapearDomainExceptionParaStatus400()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainException("E-mail inválido."));
+            new DomainException("E-mail inválido.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
     }
@@ -36,7 +33,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveMapearExceptionGenericaParaStatus500()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new InvalidOperationException("Falha inesperada."));
+            new InvalidOperationException("Falha inesperada.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status500InternalServerError);
     }
@@ -45,7 +43,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveCapturarDomainConflictExceptionAntesDeDomainException()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainConflictException("Conflito."));
+            new DomainConflictException("Conflito.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status409Conflict);
         context.Response.StatusCode.Should().NotBe(StatusCodes.Status400BadRequest);
@@ -54,8 +53,7 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task DeveDefinirContentTypeProblemJson()
     {
-        HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainException("Erro."));
+        HttpContext context = await InvocarMiddlewareComExcecaoAsync(new DomainException("Erro."));
 
         context.Response.ContentType.Should().StartWith("application/problem+json");
     }
@@ -63,8 +61,7 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task DeveRetornarProblemDetailsComTipoErroDeValidacaoParaDomainException()
     {
-        JsonElement body = await InvocarECapturarBodyAsync(
-            new DomainException("E-mail inválido."));
+        JsonElement body = await InvocarECapturarBodyAsync(new DomainException("E-mail inválido."));
 
         body.GetProperty("type").GetString().Should().Be("ErroDeValidacao");
         body.GetProperty("title").GetString().Should().Be("Erro ao processar requisição");
@@ -75,7 +72,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveRetornarProblemDetailsComTipoErroDeNegocioParaDomainConflictException()
     {
         JsonElement body = await InvocarECapturarBodyAsync(
-            new DomainConflictException("E-mail já cadastrado."));
+            new DomainConflictException("E-mail já cadastrado.")
+        );
 
         body.GetProperty("type").GetString().Should().Be("ErroDeNegocio");
         body.GetProperty("status").GetInt32().Should().Be(409);
@@ -85,7 +83,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveRetornarProblemDetailsComTipoErroInternoParaExceptionGenerica()
     {
         JsonElement body = await InvocarECapturarBodyAsync(
-            new InvalidOperationException("Falha no banco."));
+            new InvalidOperationException("Falha no banco.")
+        );
 
         body.GetProperty("type").GetString().Should().Be("ErroInterno");
         body.GetProperty("status").GetInt32().Should().Be(500);
@@ -95,7 +94,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveOcultarDetalhesTecnicosParaErro500()
     {
         JsonElement body = await InvocarECapturarBodyAsync(
-            new InvalidOperationException("Conexão recusada ao servidor SQL na porta 1433."));
+            new InvalidOperationException("Conexão recusada ao servidor SQL na porta 1433.")
+        );
 
         string mensagem = body.GetProperty("errors")[0].GetString()!;
         mensagem.Should().Be("Ocorreu um erro interno no servidor.");
@@ -106,8 +106,7 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task DeveExporMensagemOriginalDeDomainException()
     {
-        JsonElement body = await InvocarECapturarBodyAsync(
-            new DomainException("E-mail inválido."));
+        JsonElement body = await InvocarECapturarBodyAsync(new DomainException("E-mail inválido."));
 
         body.GetProperty("errors")[0].GetString().Should().Be("E-mail inválido.");
     }
@@ -115,8 +114,7 @@ public class ErrorHandlingMiddlewareTests
     [Fact]
     public async Task DeveIncluirTraceIdNaResposta()
     {
-        JsonElement body = await InvocarECapturarBodyAsync(
-            new DomainException("Erro."));
+        JsonElement body = await InvocarECapturarBodyAsync(new DomainException("Erro."));
 
         body.TryGetProperty("traceId", out JsonElement traceId).Should().BeTrue();
         traceId.GetString().Should().NotBeNullOrWhiteSpace();
@@ -126,13 +124,14 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveRetornar499QuandoClienteCancelouRequisicao()
     {
         using CancellationTokenSource cts = new();
-        cts.Cancel();
+        await cts.CancelAsync();
         DefaultHttpContext context = new() { RequestAborted = cts.Token };
         using MemoryStream body = new();
         context.Response.Body = body;
         ErrorHandlingMiddleware middleware = new(
             _ => throw new OperationCanceledException(cts.Token),
-            NullLogger<ErrorHandlingMiddleware>.Instance);
+            NullLogger<ErrorHandlingMiddleware>.Instance
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -147,8 +146,12 @@ public class ErrorHandlingMiddlewareTests
         using MemoryStream body = new();
         context.Response.Body = body;
         ErrorHandlingMiddleware middleware = new(
-            _ => throw new OperationCanceledException("Timeout interno, não cancelamento do cliente."),
-            NullLogger<ErrorHandlingMiddleware>.Instance);
+            _ =>
+                throw new OperationCanceledException(
+                    "Timeout interno, não cancelamento do cliente."
+                ),
+            NullLogger<ErrorHandlingMiddleware>.Instance
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -159,7 +162,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveMapearDomainAuthExceptionParaStatus401()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainAuthException("Credenciais inválidas."));
+            new DomainAuthException("Credenciais inválidas.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
     }
@@ -168,7 +172,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveCapturarDomainAuthExceptionAntesDeDomainException()
     {
         HttpContext context = await InvocarMiddlewareComExcecaoAsync(
-            new DomainAuthException("Credenciais inválidas."));
+            new DomainAuthException("Credenciais inválidas.")
+        );
 
         context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
         context.Response.StatusCode.Should().NotBe(StatusCodes.Status400BadRequest);
@@ -178,7 +183,8 @@ public class ErrorHandlingMiddlewareTests
     public async Task DeveRetornarProblemDetailsComTipoErroDeAutenticacaoParaDomainAuthException()
     {
         JsonElement body = await InvocarECapturarBodyAsync(
-            new DomainAuthException("Credenciais inválidas."));
+            new DomainAuthException("Credenciais inválidas.")
+        );
 
         body.GetProperty("type").GetString().Should().Be("ErroDeAutenticacao");
         body.GetProperty("status").GetInt32().Should().Be(401);
@@ -193,7 +199,8 @@ public class ErrorHandlingMiddlewareTests
         context.Response.Body = body;
         ErrorHandlingMiddleware middleware = new(
             _ => Task.CompletedTask,
-            NullLogger<ErrorHandlingMiddleware>.Instance);
+            NullLogger<ErrorHandlingMiddleware>.Instance
+        );
 
         await middleware.InvokeAsync(context);
 
@@ -207,7 +214,8 @@ public class ErrorHandlingMiddlewareTests
         context.Response.Body = new MemoryStream();
         ErrorHandlingMiddleware middleware = new(
             _ => throw excecao,
-            NullLogger<ErrorHandlingMiddleware>.Instance);
+            NullLogger<ErrorHandlingMiddleware>.Instance
+        );
 
         await middleware.InvokeAsync(context);
         return context;

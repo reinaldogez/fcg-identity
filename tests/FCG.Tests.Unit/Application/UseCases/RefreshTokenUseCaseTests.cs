@@ -31,12 +31,11 @@ public class RefreshTokenUseCaseTests
         _usuario = Usuario.Criar(
             "João",
             Email.Criar("joao@email.com"),
-            SenhaHash.Reconstituir("$2a$11$hash"));
+            SenhaHash.Reconstituir("$2a$11$hash")
+        );
         _tokenAtivo = RefreshToken.Criar(_usuario.Id, HashEntrada, DateTime.UtcNow.AddDays(7));
 
-        _jwtMock
-            .Setup(j => j.CalcularHashRefreshToken(PlaintextEntrada))
-            .Returns(HashEntrada);
+        _jwtMock.Setup(j => j.CalcularHashRefreshToken(PlaintextEntrada)).Returns(HashEntrada);
         _jwtMock
             .Setup(j => j.GerarAccessToken(It.IsAny<Usuario>()))
             .Returns(new AccessToken("access-token", DateTime.UtcNow.AddHours(1), 3600));
@@ -48,7 +47,8 @@ public class RefreshTokenUseCaseTests
             _usuarioRepoMock.Object,
             _refreshRepoMock.Object,
             _jwtMock.Object,
-            _uowMock.Object);
+            _uowMock.Object
+        );
     }
 
     [Fact]
@@ -61,7 +61,9 @@ public class RefreshTokenUseCaseTests
             .Callback<RefreshToken, CancellationToken>((rt, _) => novoSalvo = rt)
             .Returns(Task.CompletedTask);
 
-        LoginResponse resposta = await _useCase.ExecutarAsync(new RefreshTokenRequest(PlaintextEntrada));
+        LoginResponse resposta = await _useCase.ExecutarAsync(
+            new RefreshTokenRequest(PlaintextEntrada)
+        );
 
         resposta.AccessToken.Should().Be("access-token");
         resposta.RefreshToken.Should().Be(NovoPlaintext);
@@ -100,14 +102,19 @@ public class RefreshTokenUseCaseTests
         await acao.Should().ThrowAsync<DomainAuthException>().WithMessage(MensagemFalha);
         _refreshRepoMock.Verify(
             r => r.AdicionarAsync(It.IsAny<RefreshToken>(), It.IsAny<CancellationToken>()),
-            Times.Never);
+            Times.Never
+        );
     }
 
     [Fact]
     public async Task DeveLancarQuandoTokenExpirado()
     {
-        RefreshToken expirado = RefreshToken.Criar(_usuario.Id, HashEntrada, DateTime.UtcNow.AddMilliseconds(50));
-        Thread.Sleep(100);
+        RefreshToken expirado = RefreshToken.Criar(
+            _usuario.Id,
+            HashEntrada,
+            DateTime.UtcNow.AddMilliseconds(50)
+        );
+        await Task.Delay(100);
         _refreshRepoMock
             .Setup(r => r.ObterPorHashAsync(HashEntrada, It.IsAny<CancellationToken>()))
             .ReturnsAsync(expirado);
