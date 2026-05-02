@@ -45,8 +45,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenContendoClaimSubComIdDoUsuario()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token.Subject.Should().Be(_usuario.Id.ToString());
     }
@@ -54,8 +54,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenContendoClaimEmail()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token
             .Claims.Should()
@@ -67,8 +67,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenContendoClaimNameComNomeDoUsuario()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token
             .Claims.Should()
@@ -78,8 +78,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenContendoClaimRoleComoUsuario()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token
             .Claims.Should()
@@ -96,8 +96,8 @@ public class JwtTokenServiceTests
             TipoUsuario.Administrador
         );
 
-        var resultado = _service.GerarAccessToken(admin);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(admin);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token
             .Claims.Should()
@@ -109,10 +109,10 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenContendoJti()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
-        var jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti);
+        Claim? jti = token.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti);
         jti.Should().NotBeNull();
         Guid.TryParse(jti!.Value, out _).Should().BeTrue();
     }
@@ -120,7 +120,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenComExpiracaoConformeConfiguracao()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
 
         resultado
             .ExpiraEm.Should()
@@ -130,8 +130,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenComIssuerEAudienceConfigurados()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token.Issuer.Should().Be(Issuer);
         token.Audiences.Should().Contain(Audience);
@@ -140,7 +140,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveCalcularExpiresInEmSegundosCorretamente()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
 
         resultado.ExpiresInSeconds.Should().Be(60 * 60);
     }
@@ -148,8 +148,8 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveAssinarTokenComHmacSha256()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
-        var token = LerToken(resultado.Token);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
+        JwtSecurityToken token = LerToken(resultado.Token);
 
         token.SignatureAlgorithm.Should().Be(SecurityAlgorithms.HmacSha256);
     }
@@ -157,7 +157,7 @@ public class JwtTokenServiceTests
     [Fact]
     public void DeveGerarTokenValidavelComMesmaChave()
     {
-        var resultado = _service.GerarAccessToken(_usuario);
+        AccessToken resultado = _service.GerarAccessToken(_usuario);
 
         var handler = new JwtSecurityTokenHandler();
         var parametros = new TokenValidationParameters
@@ -172,7 +172,8 @@ public class JwtTokenServiceTests
             ClockSkew = TimeSpan.Zero,
         };
 
-        var acao = () => handler.ValidateToken(resultado.Token, parametros, out _);
+        Func<ClaimsPrincipal> acao = () =>
+            handler.ValidateToken(resultado.Token, parametros, out _);
         acao.Should().NotThrow();
     }
 

@@ -25,7 +25,7 @@ public class EmailTests
     [InlineData("   ")]
     public void DeveRejeitarEmailVazio(string? endereco)
     {
-        var acao = () => Email.Criar(endereco!);
+        Func<Email> acao = () => Email.Criar(endereco!);
 
         acao.Should().Throw<DomainException>();
     }
@@ -37,7 +37,7 @@ public class EmailTests
     [InlineData("email-sem-dominio")]
     public void DeveRejeitarEmailFormatoInvalido(string endereco)
     {
-        var acao = () => Email.Criar(endereco);
+        Func<Email> acao = () => Email.Criar(endereco);
 
         acao.Should().Throw<DomainException>();
     }

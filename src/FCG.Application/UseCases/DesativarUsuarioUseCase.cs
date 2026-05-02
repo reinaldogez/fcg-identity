@@ -1,3 +1,4 @@
+using FCG.Domain.Entities;
 using FCG.Domain.Interfaces;
 
 namespace FCG.Application.UseCases;
@@ -6,7 +7,7 @@ public class DesativarUsuarioUseCase(IUsuarioRepository repositorio, IUnitOfWork
 {
     public async Task<bool> ExecutarAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
+        Usuario? usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
         if (usuario is null)
             return false;
 

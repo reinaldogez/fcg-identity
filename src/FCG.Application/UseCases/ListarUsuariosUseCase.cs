@@ -18,7 +18,7 @@ public class ListarUsuariosUseCase(IUsuarioRepository repositorio)
             cancellationToken
         );
 
-        List<UsuarioResponse> responses = items
+        var responses = items
             .Select(u => new UsuarioResponse(
                 u.Id,
                 u.Nome,

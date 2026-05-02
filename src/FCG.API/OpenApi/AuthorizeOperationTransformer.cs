@@ -14,7 +14,7 @@ public class AuthorizeOperationTransformer : IOpenApiOperationTransformer
         CancellationToken cancellationToken
     )
     {
-        var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+        IList<object> metadata = context.Description.ActionDescriptor.EndpointMetadata;
 
         bool hasAuthorize = metadata.OfType<IAuthorizeData>().Any();
         bool hasAllowAnonymous = metadata.OfType<IAllowAnonymous>().Any();

@@ -1,3 +1,4 @@
+using FCG.Application.DTOs;
 using FCG.Application.UseCases;
 using FCG.Domain.Entities;
 using FCG.Domain.Enums;
@@ -30,7 +31,7 @@ public class ObterUsuarioPorIdUseCaseTests
             .Setup(r => r.ObterPorIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        var resultado = await _useCase.ExecutarAsync(id);
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(id);
 
         resultado.Should().NotBeNull();
         resultado!.Nome.Should().Be("João Silva");
@@ -48,7 +49,7 @@ public class ObterUsuarioPorIdUseCaseTests
             .Setup(r => r.ObterPorIdAsync(id, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        var resultado = await _useCase.ExecutarAsync(id);
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(id);
 
         resultado.Should().BeNull();
     }

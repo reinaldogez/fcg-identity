@@ -1,3 +1,4 @@
+using FCG.Application.DTOs;
 using FCG.Application.UseCases;
 using FCG.Domain.Entities;
 using FCG.Domain.Interfaces;
@@ -29,7 +30,7 @@ public class ListarUsuariosUseCaseTests
             .Setup(r => r.ListarPaginadoAsync(1, 10, It.IsAny<CancellationToken>()))
             .ReturnsAsync((usuarios, 5));
 
-        var resultado = await _useCase.ExecutarAsync(1, 10);
+        ListarUsuariosResponse resultado = await _useCase.ExecutarAsync(1, 10);
 
         resultado.Items.Should().HaveCount(2);
         resultado.Total.Should().Be(5);
@@ -50,7 +51,7 @@ public class ListarUsuariosUseCaseTests
             )
             .ReturnsAsync((new List<Usuario>(), 0));
 
-        var resultado = await _useCase.ExecutarAsync(1, 10);
+        ListarUsuariosResponse resultado = await _useCase.ExecutarAsync(1, 10);
 
         resultado.Items.Should().BeEmpty();
         resultado.Total.Should().Be(0);
@@ -71,7 +72,7 @@ public class ListarUsuariosUseCaseTests
             )
             .ReturnsAsync((new List<Usuario>(), 0));
 
-        var acao = () => _useCase.ExecutarAsync(1, tamanhoPagina);
+        Func<Task<ListarUsuariosResponse>> acao = () => _useCase.ExecutarAsync(1, tamanhoPagina);
 
         await acao.Should().NotThrowAsync();
     }

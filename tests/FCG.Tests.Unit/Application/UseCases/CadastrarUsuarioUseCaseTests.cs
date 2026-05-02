@@ -52,7 +52,7 @@ public class CadastrarUsuarioUseCaseTests
     {
         var request = new CadastrarUsuarioRequest("João Silva", "joao@email.com", "Senh@123");
 
-        var resultado = await _useCase.ExecutarAsync(request);
+        UsuarioResponse resultado = await _useCase.ExecutarAsync(request);
 
         resultado.Nome.Should().Be("João Silva");
         resultado.Email.Should().Be("joao@email.com");
@@ -84,7 +84,7 @@ public class CadastrarUsuarioUseCaseTests
 
         var request = new CadastrarUsuarioRequest("João Silva", "joao@email.com", "Senh@123");
 
-        var acao = () => _useCase.ExecutarAsync(request);
+        Func<Task<UsuarioResponse>> acao = () => _useCase.ExecutarAsync(request);
 
         await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }
@@ -94,7 +94,7 @@ public class CadastrarUsuarioUseCaseTests
     {
         var request = new CadastrarUsuarioRequest(string.Empty, "joao@email.com", "Senh@123");
 
-        var acao = () => _useCase.ExecutarAsync(request);
+        Func<Task<UsuarioResponse>> acao = () => _useCase.ExecutarAsync(request);
 
         await acao.Should().ThrowAsync<DomainException>();
     }
@@ -104,7 +104,7 @@ public class CadastrarUsuarioUseCaseTests
     {
         var request = new CadastrarUsuarioRequest("João Silva", "email-invalido", "Senh@123");
 
-        var acao = () => _useCase.ExecutarAsync(request);
+        Func<Task<UsuarioResponse>> acao = () => _useCase.ExecutarAsync(request);
 
         await acao.Should().ThrowAsync<DomainException>();
     }
@@ -114,7 +114,7 @@ public class CadastrarUsuarioUseCaseTests
     {
         var request = new CadastrarUsuarioRequest("João Silva", "joao@email.com", "123");
 
-        var acao = () => _useCase.ExecutarAsync(request);
+        Func<Task<UsuarioResponse>> acao = () => _useCase.ExecutarAsync(request);
 
         await acao.Should().ThrowAsync<DomainException>();
     }

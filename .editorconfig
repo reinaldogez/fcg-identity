@@ -71,9 +71,12 @@ csharp_preserve_single_line_statements = false
 csharp_preserve_single_line_blocks = true
 
 # --- var preferences --------------------------------------------------------
-csharp_style_var_for_built_in_types = false:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
+# Tipos primitivos (int, string, bool…) sempre explícitos — var esconde informação relevante
+csharp_style_var_for_built_in_types = false:warning
+# var permitido quando o tipo já aparece na expressão: new Jogo(), (Jogo)obj, etc.
+csharp_style_var_when_type_is_apparent = true:warning
+# Em qualquer outro contexto, tipo explícito obrigatório para preservar legibilidade
+csharp_style_var_elsewhere = false:warning
 
 # --- this. qualification (do not use) ---------------------------------------
 dotnet_style_qualification_for_field = false:suggestion

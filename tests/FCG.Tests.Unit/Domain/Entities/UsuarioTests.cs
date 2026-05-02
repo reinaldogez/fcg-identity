@@ -34,11 +34,11 @@ public class UsuarioTests
     [Fact]
     public void DeveDefinirDataCriacaoAutomaticamente()
     {
-        var antes = DateTime.UtcNow;
+        DateTime antes = DateTime.UtcNow;
 
         var usuario = Usuario.Criar("João Silva", _emailValido, _senhaHashValida);
 
-        var depois = DateTime.UtcNow;
+        DateTime depois = DateTime.UtcNow;
         usuario.DataCriacao.Should().BeOnOrAfter(antes).And.BeOnOrBefore(depois);
     }
 
@@ -64,7 +64,7 @@ public class UsuarioTests
     [InlineData("   ")]
     public void DeveRejeitarNomeVazio(string? nome)
     {
-        var acao = () => Usuario.Criar(nome!, _emailValido, _senhaHashValida);
+        Func<Usuario> acao = () => Usuario.Criar(nome!, _emailValido, _senhaHashValida);
 
         acao.Should().Throw<DomainException>().WithMessage("*nome*");
     }
@@ -72,9 +72,9 @@ public class UsuarioTests
     [Fact]
     public void DeveAceitarNomeComTamanhoMaximo()
     {
-        var nome = new string('A', Usuario.NomeTamanhoMaximo);
+        string nome = new string('A', Usuario.NomeTamanhoMaximo);
 
-        var acao = () => Usuario.Criar(nome, _emailValido, _senhaHashValida);
+        Func<Usuario> acao = () => Usuario.Criar(nome, _emailValido, _senhaHashValida);
 
         acao.Should().NotThrow();
     }
@@ -82,9 +82,9 @@ public class UsuarioTests
     [Fact]
     public void DeveRejeitarNomeAcimaDoTamanhoMaximo()
     {
-        var nome = new string('A', Usuario.NomeTamanhoMaximo + 1);
+        string nome = new string('A', Usuario.NomeTamanhoMaximo + 1);
 
-        var acao = () => Usuario.Criar(nome, _emailValido, _senhaHashValida);
+        Func<Usuario> acao = () => Usuario.Criar(nome, _emailValido, _senhaHashValida);
 
         acao.Should().Throw<DomainException>().WithMessage("*máximo*");
     }
@@ -111,7 +111,7 @@ public class UsuarioTests
     [InlineData("   ")]
     public void DeveRejeitarNomeVazioParaAdministrador(string? nome)
     {
-        var acao = () =>
+        Func<Usuario> acao = () =>
             Usuario.Criar(nome!, _emailValido, _senhaHashValida, TipoUsuario.Administrador);
 
         acao.Should().Throw<DomainException>().WithMessage("*nome*");
@@ -138,7 +138,7 @@ public class UsuarioTests
         var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
         var novoEmail = Email.Criar("novo@email.com");
 
-        var acao = () => usuario.AlterarDados(nome!, novoEmail);
+        Action acao = () => usuario.AlterarDados(nome!, novoEmail);
 
         acao.Should().Throw<DomainException>().WithMessage("*nome*");
     }
@@ -147,9 +147,9 @@ public class UsuarioTests
     public void DeveRejeitarNomeAcimaDoTamanhoMaximoAoAlterarDados()
     {
         var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
-        var nome = new string('A', Usuario.NomeTamanhoMaximo + 1);
+        string nome = new string('A', Usuario.NomeTamanhoMaximo + 1);
 
-        var acao = () => usuario.AlterarDados(nome, _emailValido);
+        Action acao = () => usuario.AlterarDados(nome, _emailValido);
 
         acao.Should().Throw<DomainException>().WithMessage("*máximo*");
     }
@@ -159,7 +159,7 @@ public class UsuarioTests
     {
         var usuario = Usuario.Criar("Nome Original", _emailValido, _senhaHashValida);
 
-        var acao = () => usuario.AlterarDados("Nome Novo", null!);
+        Action acao = () => usuario.AlterarDados("Nome Novo", null!);
 
         acao.Should().Throw<DomainException>().WithMessage("*e-mail*");
     }
@@ -201,7 +201,7 @@ public class UsuarioTests
         var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
         usuario.Desativar();
 
-        var acao = () => usuario.Desativar();
+        Action acao = () => usuario.Desativar();
 
         acao.Should().NotThrow();
         usuario.Ativo.Should().BeFalse();
@@ -237,7 +237,7 @@ public class UsuarioTests
     {
         var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
 
-        var acao = () => usuario.AlterarTipo((TipoUsuario)99);
+        Action acao = () => usuario.AlterarTipo((TipoUsuario)99);
 
         acao.Should().Throw<DomainException>();
     }
@@ -252,7 +252,7 @@ public class UsuarioTests
             TipoUsuario.Administrador
         );
 
-        var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, admin.Id);
+        Action acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Usuario, admin.Id);
 
         acao.Should().Throw<DomainException>().WithMessage("*rebaixar a si mesmo*");
     }
@@ -283,7 +283,7 @@ public class UsuarioTests
             TipoUsuario.Administrador
         );
 
-        var acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Administrador, admin.Id);
+        Action acao = () => admin.AlterarTipoSolicitadoPor(TipoUsuario.Administrador, admin.Id);
 
         acao.Should().NotThrow();
         admin.Tipo.Should().Be(TipoUsuario.Administrador);
@@ -309,7 +309,7 @@ public class UsuarioTests
             TipoUsuario.Administrador
         );
 
-        var acao = () => admin.AlterarTipoSolicitadoPor((TipoUsuario)99, Guid.NewGuid());
+        Action acao = () => admin.AlterarTipoSolicitadoPor((TipoUsuario)99, Guid.NewGuid());
 
         acao.Should().Throw<DomainException>().WithMessage("*Tipo*");
     }

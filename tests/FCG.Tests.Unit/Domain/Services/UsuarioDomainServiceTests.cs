@@ -1,3 +1,4 @@
+using FCG.Domain.Entities;
 using FCG.Domain.Exceptions;
 using FCG.Domain.Interfaces;
 using FCG.Domain.Services;
@@ -30,7 +31,7 @@ public class UsuarioDomainServiceTests
     [Fact]
     public async Task DeveRegistrarUsuarioComDadosValidos()
     {
-        var usuario = await _domainService.RegistrarAsync(
+        Usuario usuario = await _domainService.RegistrarAsync(
             NomeValido,
             _emailValido,
             _senhaHashValida
@@ -49,7 +50,8 @@ public class UsuarioDomainServiceTests
             .Setup(r => r.ExisteComEmailAsync(_emailValido, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        var acao = () => _domainService.RegistrarAsync(NomeValido, _emailValido, _senhaHashValida);
+        Func<Task<Usuario>> acao = () =>
+            _domainService.RegistrarAsync(NomeValido, _emailValido, _senhaHashValida);
 
         await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }
@@ -111,7 +113,7 @@ public class UsuarioDomainServiceTests
 
         var usuario = FCG.Domain.Entities.Usuario.Criar(NomeValido, _emailValido, _senhaHashValida);
 
-        var acao = () => _domainService.AtualizarDadosAsync(usuario, "Novo Nome", emailNovo);
+        Func<Task> acao = () => _domainService.AtualizarDadosAsync(usuario, "Novo Nome", emailNovo);
 
         await acao.Should().ThrowAsync<DomainConflictException>().WithMessage("*e-mail*");
     }

@@ -33,7 +33,7 @@ public class OwnerOrAdminHandlerTests
     [Fact]
     public async Task DevePermitirQuandoSubDoTokenIgualAoIdDaRota()
     {
-        Guid id = Guid.NewGuid();
+        var id = Guid.NewGuid();
         ClaimsPrincipal principal = CriarPrincipal(
             sub: id.ToString(),
             role: TipoUsuario.Usuario.ToString()

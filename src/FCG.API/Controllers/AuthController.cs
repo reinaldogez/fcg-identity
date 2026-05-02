@@ -34,7 +34,7 @@ public class AuthController(
         CancellationToken cancellationToken
     )
     {
-        var resposta = await loginUseCase.ExecutarAsync(request, cancellationToken);
+        LoginResponse resposta = await loginUseCase.ExecutarAsync(request, cancellationToken);
         return Ok(resposta);
     }
 
@@ -58,7 +58,10 @@ public class AuthController(
         CancellationToken cancellationToken
     )
     {
-        var resposta = await refreshTokenUseCase.ExecutarAsync(request, cancellationToken);
+        LoginResponse resposta = await refreshTokenUseCase.ExecutarAsync(
+            request,
+            cancellationToken
+        );
         return Ok(resposta);
     }
 

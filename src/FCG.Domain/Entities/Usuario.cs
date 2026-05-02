@@ -89,7 +89,7 @@ public class Usuario
         if (string.IsNullOrWhiteSpace(nome))
             throw new DomainException("O nome é obrigatório.");
 
-        var nomeTrimmed = nome.Trim();
+        string nomeTrimmed = nome.Trim();
 
         if (nomeTrimmed.Length > NomeTamanhoMaximo)
             throw new DomainException($"O nome deve ter no máximo {NomeTamanhoMaximo} caracteres.");

@@ -35,7 +35,7 @@ public class AlterarSenhaUseCaseTests
     [Fact]
     public async Task DeveAlterarSenhaQuandoSenhaAtualCorretaENovaValida()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -43,7 +43,7 @@ public class AlterarSenhaUseCaseTests
             .Setup(s => s.VerificarSenha("SenhaAtual@1", _senhaHashOriginal))
             .Returns(true);
 
-        var resultado = await _useCase.ExecutarAsync(
+        bool resultado = await _useCase.ExecutarAsync(
             usuario.Id,
             new AlterarSenhaRequest("SenhaAtual@1", "NovaSenha@2")
         );
@@ -62,7 +62,7 @@ public class AlterarSenhaUseCaseTests
             .Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        var resultado = await _useCase.ExecutarAsync(
+        bool resultado = await _useCase.ExecutarAsync(
             Guid.NewGuid(),
             new AlterarSenhaRequest("Senha@1", "NovaSenha@2")
         );
@@ -73,7 +73,7 @@ public class AlterarSenhaUseCaseTests
     [Fact]
     public async Task DeveLancarDomainExceptionQuandoSenhaAtualIncorreta()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -81,7 +81,7 @@ public class AlterarSenhaUseCaseTests
             .Setup(s => s.VerificarSenha(It.IsAny<string>(), It.IsAny<SenhaHash>()))
             .Returns(false);
 
-        var acao = () =>
+        Func<Task<bool>> acao = () =>
             _useCase.ExecutarAsync(
                 usuario.Id,
                 new AlterarSenhaRequest("SenhaErrada@1", "NovaSenha@2")
@@ -96,7 +96,7 @@ public class AlterarSenhaUseCaseTests
     [InlineData("semEspecial1")]
     public async Task DeveRejeitarNovaSenhaFraca(string novaSenha)
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -104,7 +104,7 @@ public class AlterarSenhaUseCaseTests
             .Setup(s => s.VerificarSenha(It.IsAny<string>(), It.IsAny<SenhaHash>()))
             .Returns(true);
 
-        var acao = () =>
+        Func<Task<bool>> acao = () =>
             _useCase.ExecutarAsync(usuario.Id, new AlterarSenhaRequest("SenhaAtual@1", novaSenha));
 
         await acao.Should().ThrowAsync<DomainException>();
@@ -113,7 +113,7 @@ public class AlterarSenhaUseCaseTests
     [Fact]
     public async Task DeveChamarVerificarSenhaComSenhaAtual()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -135,7 +135,7 @@ public class AlterarSenhaUseCaseTests
     [Fact]
     public async Task DeveChamarGerarHashComNovaSenha()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -154,7 +154,7 @@ public class AlterarSenhaUseCaseTests
     [Fact]
     public async Task NaoDeveSalvarQuandoSenhaAtualIncorreta()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);

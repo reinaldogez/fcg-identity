@@ -22,7 +22,7 @@ public class AdminSeedService(
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        var senha = configuration["AdminSeed:DefaultPassword"];
+        string? senha = configuration["AdminSeed:DefaultPassword"];
 
         if (string.IsNullOrWhiteSpace(senha))
         {
@@ -32,9 +32,9 @@ public class AdminSeedService(
             return;
         }
 
-        using var scope = scopeFactory.CreateScope();
-        var contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
-        var senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
+        using IServiceScope scope = scopeFactory.CreateScope();
+        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        ISenhaService senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
 
         var email = Email.Criar(AdminEmail);
         bool adminExiste = await contexto.Usuarios.AnyAsync(

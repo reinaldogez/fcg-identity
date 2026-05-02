@@ -50,11 +50,13 @@ public class UsuarioRepository(FcgDbContext contexto) : IUsuarioRepository
         CancellationToken cancellationToken = default
     )
     {
-        var query = contexto.Usuarios.AsNoTracking().OrderBy(u => u.DataCriacao);
+        IOrderedQueryable<Usuario> query = contexto
+            .Usuarios.AsNoTracking()
+            .OrderBy(u => u.DataCriacao);
 
         int total = await query.CountAsync(cancellationToken);
 
-        var items = await query
+        List<Usuario> items = await query
             .Skip((pagina - 1) * tamanhoPagina)
             .Take(tamanhoPagina)
             .ToListAsync(cancellationToken);

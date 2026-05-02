@@ -23,7 +23,7 @@ public class SenhaTests
     [InlineData("   ")]
     public void DeveRejeitarSenhaVazia(string? senhaTexto)
     {
-        var acao = () => Senha.Validar(senhaTexto!);
+        Func<Senha> acao = () => Senha.Validar(senhaTexto!);
 
         acao.Should().Throw<DomainException>().WithMessage("*obrigatória*");
     }
@@ -33,7 +33,7 @@ public class SenhaTests
     [InlineData("Aa@1234")]
     public void DeveRejeitarSenhaCurta(string senhaTexto)
     {
-        var acao = () => Senha.Validar(senhaTexto);
+        Func<Senha> acao = () => Senha.Validar(senhaTexto);
 
         acao.Should().Throw<DomainException>().WithMessage("*8 caracteres*");
     }
@@ -41,7 +41,7 @@ public class SenhaTests
     [Fact]
     public void DeveRejeitarSenhaSemLetra()
     {
-        var acao = () => Senha.Validar("12345678@");
+        Func<Senha> acao = () => Senha.Validar("12345678@");
 
         acao.Should().Throw<DomainException>().WithMessage("*letra*");
     }
@@ -49,7 +49,7 @@ public class SenhaTests
     [Fact]
     public void DeveRejeitarSenhaSemNumero()
     {
-        var acao = () => Senha.Validar("Abcdefgh@");
+        Func<Senha> acao = () => Senha.Validar("Abcdefgh@");
 
         acao.Should().Throw<DomainException>().WithMessage("*número*");
     }
@@ -57,7 +57,7 @@ public class SenhaTests
     [Fact]
     public void DeveRejeitarSenhaSemCaractereEspecial()
     {
-        var acao = () => Senha.Validar("Abcdefg1");
+        Func<Senha> acao = () => Senha.Validar("Abcdefg1");
 
         acao.Should().Throw<DomainException>().WithMessage("*caractere especial*");
     }

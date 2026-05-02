@@ -50,7 +50,7 @@ public class LoginUseCase(
 
         AccessToken accessToken = jwtTokenService.GerarAccessToken(usuario);
         RefreshTokenGerado refreshGerado = jwtTokenService.GerarRefreshToken();
-        RefreshToken refreshToken = RefreshToken.Criar(
+        var refreshToken = RefreshToken.Criar(
             usuario.Id,
             refreshGerado.Hash,
             refreshGerado.ExpiraEm

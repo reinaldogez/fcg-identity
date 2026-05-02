@@ -1,4 +1,5 @@
 using FCG.Application.DTOs;
+using FCG.Domain.Entities;
 using FCG.Domain.Interfaces;
 
 namespace FCG.Application.UseCases;
@@ -10,7 +11,7 @@ public class ObterUsuarioPorIdUseCase(IUsuarioRepository repositorio)
         CancellationToken cancellationToken = default
     )
     {
-        var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
+        Usuario? usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
 
         if (usuario is null)
             return null;

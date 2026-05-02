@@ -1,4 +1,5 @@
 using FCG.Application.DTOs;
+using FCG.Domain.Entities;
 using FCG.Domain.Interfaces;
 using FCG.Domain.ValueObjects;
 
@@ -16,7 +17,7 @@ public class AtualizarUsuarioUseCase(
         CancellationToken cancellationToken = default
     )
     {
-        var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
+        Usuario? usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
         if (usuario is null)
             return null;
 

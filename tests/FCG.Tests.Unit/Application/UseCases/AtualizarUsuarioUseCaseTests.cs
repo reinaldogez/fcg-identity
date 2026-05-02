@@ -31,7 +31,7 @@ public class AtualizarUsuarioUseCaseTests
     [Fact]
     public async Task DeveAtualizarUsuarioComSucesso()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -50,7 +50,7 @@ public class AtualizarUsuarioUseCaseTests
 
         var request = new AtualizarUsuarioRequest("Novo Nome", "novo@email.com");
 
-        var resultado = await _useCase.ExecutarAsync(usuario.Id, request);
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(usuario.Id, request);
 
         resultado.Should().NotBeNull();
         resultado!.Nome.Should().Be("Novo Nome");
@@ -63,7 +63,7 @@ public class AtualizarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        var resultado = await _useCase.ExecutarAsync(
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(
             Guid.NewGuid(),
             new AtualizarUsuarioRequest("Nome", "email@email.com")
         );
@@ -74,12 +74,12 @@ public class AtualizarUsuarioUseCaseTests
     [Fact]
     public async Task DeveRejeitarEmailInvalido()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        var acao = () =>
+        Func<Task<UsuarioResponse?>> acao = () =>
             _useCase.ExecutarAsync(
                 usuario.Id,
                 new AtualizarUsuarioRequest("Nome", "email-invalido")
@@ -91,7 +91,7 @@ public class AtualizarUsuarioUseCaseTests
     [Fact]
     public async Task DevePropagarDomainConflictExceptionQuandoEmailDuplicado()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -108,7 +108,7 @@ public class AtualizarUsuarioUseCaseTests
                 new DomainConflictException("Já existe um usuário cadastrado com este e-mail.")
             );
 
-        var acao = () =>
+        Func<Task<UsuarioResponse?>> acao = () =>
             _useCase.ExecutarAsync(
                 usuario.Id,
                 new AtualizarUsuarioRequest("Nome", "outro@email.com")
@@ -120,7 +120,7 @@ public class AtualizarUsuarioUseCaseTests
     [Fact]
     public async Task DeveChamarRepositorioAtualizar()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
@@ -146,7 +146,7 @@ public class AtualizarUsuarioUseCaseTests
     [Fact]
     public async Task DeveChamarSalvarAlteracoes()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);

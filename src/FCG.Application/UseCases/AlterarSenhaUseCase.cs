@@ -1,5 +1,6 @@
 using FCG.Application.DTOs;
 using FCG.Application.Interfaces;
+using FCG.Domain.Entities;
 using FCG.Domain.Exceptions;
 using FCG.Domain.Interfaces;
 using FCG.Domain.ValueObjects;
@@ -18,7 +19,7 @@ public class AlterarSenhaUseCase(
         CancellationToken cancellationToken = default
     )
     {
-        var usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
+        Usuario? usuario = await repositorio.ObterPorIdAsync(id, cancellationToken);
         if (usuario is null)
             return false;
 

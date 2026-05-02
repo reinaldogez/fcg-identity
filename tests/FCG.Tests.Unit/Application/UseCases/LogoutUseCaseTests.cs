@@ -28,7 +28,7 @@ public class LogoutUseCaseTests
     [Fact]
     public async Task DeveRevogarTokenExistenteAtivoEPersistir()
     {
-        RefreshToken token = RefreshToken.Criar(Guid.NewGuid(), Hash, DateTime.UtcNow.AddDays(7));
+        var token = RefreshToken.Criar(Guid.NewGuid(), Hash, DateTime.UtcNow.AddDays(7));
         _refreshRepoMock
             .Setup(r => r.ObterPorHashAsync(Hash, It.IsAny<CancellationToken>()))
             .ReturnsAsync(token);
@@ -54,7 +54,7 @@ public class LogoutUseCaseTests
     [Fact]
     public async Task DeveSerNoOpQuandoTokenJaRevogado()
     {
-        RefreshToken token = RefreshToken.Criar(Guid.NewGuid(), Hash, DateTime.UtcNow.AddDays(7));
+        var token = RefreshToken.Criar(Guid.NewGuid(), Hash, DateTime.UtcNow.AddDays(7));
         token.Revogar();
         _refreshRepoMock
             .Setup(r => r.ObterPorHashAsync(Hash, It.IsAny<CancellationToken>()))

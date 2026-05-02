@@ -65,7 +65,7 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
 
         SenhaHash senhaHash = senhaService.GerarHash(senhaPlaintextParaHash);
-        Usuario usuario = Usuario.Criar(nome, Email.Criar(email), senhaHash, tipo);
+        var usuario = Usuario.Criar(nome, Email.Criar(email), senhaHash, tipo);
         await contexto.Usuarios.AddAsync(usuario);
         await contexto.SaveChangesAsync();
 

@@ -43,7 +43,10 @@ public class UsuarioController(
         CancellationToken cancellationToken
     )
     {
-        var resposta = await cadastrarUsuarioUseCase.ExecutarAsync(request, cancellationToken);
+        UsuarioResponse resposta = await cadastrarUsuarioUseCase.ExecutarAsync(
+            request,
+            cancellationToken
+        );
         return CreatedAtRoute("ObterUsuarioPorId", new { id = resposta.Id }, resposta);
     }
 
@@ -68,7 +71,10 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var resposta = await obterUsuarioPorIdUseCase.ExecutarAsync(id, cancellationToken);
+        UsuarioResponse? resposta = await obterUsuarioPorIdUseCase.ExecutarAsync(
+            id,
+            cancellationToken
+        );
 
         if (resposta is null)
             return NotFound();
@@ -106,7 +112,7 @@ public class UsuarioController(
         CancellationToken cancellationToken = default
     )
     {
-        var resposta = await listarUsuariosUseCase.ExecutarAsync(
+        ListarUsuariosResponse resposta = await listarUsuariosUseCase.ExecutarAsync(
             pagina,
             tamanhoPagina,
             cancellationToken
@@ -144,7 +150,11 @@ public class UsuarioController(
         CancellationToken cancellationToken
     )
     {
-        var resposta = await atualizarUsuarioUseCase.ExecutarAsync(id, request, cancellationToken);
+        UsuarioResponse? resposta = await atualizarUsuarioUseCase.ExecutarAsync(
+            id,
+            request,
+            cancellationToken
+        );
         if (resposta is null)
             return NotFound();
 
@@ -242,8 +252,8 @@ public class UsuarioController(
         CancellationToken cancellationToken
     )
     {
-        Guid solicitanteId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
-        var resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(
+        var solicitanteId = Guid.Parse(User.FindFirst(JwtRegisteredClaimNames.Sub)!.Value);
+        UsuarioResponse? resposta = await alterarTipoUsuarioUseCase.ExecutarAsync(
             id,
             solicitanteId,
             request,

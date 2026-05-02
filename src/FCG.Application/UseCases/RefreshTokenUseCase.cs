@@ -42,11 +42,7 @@ public class RefreshTokenUseCase(
 
         AccessToken accessToken = jwtTokenService.GerarAccessToken(usuario);
         RefreshTokenGerado novoRefresh = jwtTokenService.GerarRefreshToken();
-        RefreshToken novoToken = RefreshToken.Criar(
-            usuario.Id,
-            novoRefresh.Hash,
-            novoRefresh.ExpiraEm
-        );
+        var novoToken = RefreshToken.Criar(usuario.Id, novoRefresh.Hash, novoRefresh.ExpiraEm);
 
         tokenExistente.RevogarESubstituirPor(novoToken.Id);
         await refreshTokenRepository.AdicionarAsync(novoToken, cancellationToken);

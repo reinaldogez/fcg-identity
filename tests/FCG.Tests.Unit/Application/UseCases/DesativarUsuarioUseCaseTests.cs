@@ -21,12 +21,12 @@ public class DesativarUsuarioUseCaseTests
     [Fact]
     public async Task DeveDesativarUsuarioAtivo()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        var resultado = await _useCase.ExecutarAsync(usuario.Id);
+        bool resultado = await _useCase.ExecutarAsync(usuario.Id);
 
         resultado.Should().BeTrue();
         usuario.Ativo.Should().BeFalse();
@@ -39,7 +39,7 @@ public class DesativarUsuarioUseCaseTests
             .Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Usuario?)null);
 
-        var resultado = await _useCase.ExecutarAsync(Guid.NewGuid());
+        bool resultado = await _useCase.ExecutarAsync(Guid.NewGuid());
 
         resultado.Should().BeFalse();
     }
@@ -47,16 +47,16 @@ public class DesativarUsuarioUseCaseTests
     [Fact]
     public async Task DeveSerIdempotenteParaUsuarioJaDesativado()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         usuario.Desativar();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);
 
-        var acao = () => _useCase.ExecutarAsync(usuario.Id);
+        Func<Task<bool>> acao = () => _useCase.ExecutarAsync(usuario.Id);
 
         await acao.Should().NotThrowAsync();
-        var resultado = await _useCase.ExecutarAsync(usuario.Id);
+        bool resultado = await _useCase.ExecutarAsync(usuario.Id);
         resultado.Should().BeTrue();
         usuario.Ativo.Should().BeFalse();
         _unitOfWorkMock.Verify(
@@ -68,7 +68,7 @@ public class DesativarUsuarioUseCaseTests
     [Fact]
     public async Task DeveChamarSalvarAlteracoes()
     {
-        var usuario = CriarUsuario();
+        Usuario usuario = CriarUsuario();
         _repositorioMock
             .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(usuario);

@@ -109,7 +109,7 @@ public class RefreshTokenUseCaseTests
     [Fact]
     public async Task DeveLancarQuandoTokenExpirado()
     {
-        RefreshToken expirado = RefreshToken.Criar(
+        var expirado = RefreshToken.Criar(
             _usuario.Id,
             HashEntrada,
             DateTime.UtcNow.AddMilliseconds(50)

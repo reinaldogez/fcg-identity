@@ -24,7 +24,7 @@ using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSerilog(
     (services, lc) =>
@@ -124,7 +124,7 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
-var connectionString =
+string connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
 builder.Services.AddDbContext<FcgDbContext>(options => options.UseSqlServer(connectionString));
@@ -147,7 +147,7 @@ builder.Services.AddScoped<RefreshTokenUseCase>();
 builder.Services.AddScoped<LogoutUseCase>();
 builder.Services.AddHostedService<AdminSeedService>();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseSerilogRequestLogging();
