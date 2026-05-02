@@ -356,6 +356,34 @@ PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/desativar
 Authorization: Bearer {{adminToken}}
 
 # ===========================================================================
+# ATIVAR USUÁRIO (somente Administrador — reverte soft delete, idempotente)
+# ===========================================================================
+
+### Ativar sem token (401 Unauthorized)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/ativar
+
+### Ativar como usuário comum (403 Forbidden)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/ativar
+Authorization: Bearer {{usuarioToken}}
+
+### Desativar e depois ativar como admin (caso feliz — 204 No Content)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/desativar
+Authorization: Bearer {{adminToken}}
+
+###
+
+PATCH {{host}}/api/usuarios/{{usuarioId}}/ativar
+Authorization: Bearer {{adminToken}}
+
+### Ativar novamente — idempotente (204 No Content)
+PATCH {{host}}/api/usuarios/{{usuarioId}}/ativar
+Authorization: Bearer {{adminToken}}
+
+### Ativar usuário inexistente como admin (404 Not Found)
+PATCH {{host}}/api/usuarios/00000000-0000-0000-0000-000000000000/ativar
+Authorization: Bearer {{adminToken}}
+
+# ===========================================================================
 # ALTERAR TIPO DE USUÁRIO (somente Administrador)
 # ===========================================================================
 

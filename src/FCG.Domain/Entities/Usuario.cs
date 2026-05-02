@@ -59,6 +59,14 @@ public class Usuario
         Ativo = false;
     }
 
+    public void Ativar()
+    {
+        if (Ativo)
+            return;
+
+        Ativo = true;
+    }
+
     public void AlterarTipo(TipoUsuario novoTipo)
     {
         if (!Enum.IsDefined(novoTipo))

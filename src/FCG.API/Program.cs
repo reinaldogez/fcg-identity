@@ -141,6 +141,7 @@ builder.Services.AddScoped<ListarUsuariosUseCase>();
 builder.Services.AddScoped<AtualizarUsuarioUseCase>();
 builder.Services.AddScoped<AlterarSenhaUseCase>();
 builder.Services.AddScoped<DesativarUsuarioUseCase>();
+builder.Services.AddScoped<AtivarUsuarioUseCase>();
 builder.Services.AddScoped<AlterarTipoUsuarioUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<RefreshTokenUseCase>();
@@ -156,6 +157,7 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
     app.MapScalarApiReference();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/openapi/v1.json", "FCG API v1"));
 }
 
 app.UseHttpsRedirection();

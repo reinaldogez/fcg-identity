@@ -587,6 +587,113 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
         body!.Ativo.Should().BeFalse();
     }
 
+    // --- Ativar (somente Administrador) ---
+
+    [Fact]
+    public async Task DeveRetornar401AoAtivarSemToken()
+    {
+        HttpResponseMessage resposta = await _client.PatchAsync(
+            $"/api/usuarios/{Guid.NewGuid()}/ativar",
+            null
+        );
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task DeveRetornar403AoAtivarComoUsuarioComum()
+    {
+        (Guid alvoId, string _) = await _factory.CriarUsuarioAutenticadoAsync(
+            "alvo-ativar@fcg.com"
+        );
+        (Guid _, string? comumToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "comum-ativar@fcg.com"
+        );
+        HttpClient client = _factory.CreateAuthenticatedClient(comumToken);
+
+        HttpResponseMessage resposta = await client.PatchAsync(
+            $"/api/usuarios/{alvoId}/ativar",
+            null
+        );
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task DeveAtivarUsuarioComoAdminERetornar204()
+    {
+        (Guid alvoId, string _) = await _factory.CriarUsuarioAutenticadoAsync("ativaralvo@fcg.com");
+        (Guid _, string? adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-ativ@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
+        HttpClient adminClient = _factory.CreateAuthenticatedClient(adminToken);
+        await adminClient.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
+
+        HttpResponseMessage resposta = await adminClient.PatchAsync(
+            $"/api/usuarios/{alvoId}/ativar",
+            null
+        );
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DeveRetornar404AoAtivarUsuarioInexistenteComoAdmin()
+    {
+        (Guid _, string? adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-ativ-404@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
+        HttpClient adminClient = _factory.CreateAuthenticatedClient(adminToken);
+
+        HttpResponseMessage resposta = await adminClient.PatchAsync(
+            $"/api/usuarios/{Guid.NewGuid()}/ativar",
+            null
+        );
+
+        resposta.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task DeveSerIdempotenteAoAtivarDuasVezesComoAdmin()
+    {
+        (Guid alvoId, string _) = await _factory.CriarUsuarioAutenticadoAsync(
+            "idempotente-ativ@fcg.com"
+        );
+        (Guid _, string? adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-idem-ativ@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
+        HttpClient adminClient = _factory.CreateAuthenticatedClient(adminToken);
+
+        await adminClient.PatchAsync($"/api/usuarios/{alvoId}/ativar", null);
+        HttpResponseMessage segunda = await adminClient.PatchAsync(
+            $"/api/usuarios/{alvoId}/ativar",
+            null
+        );
+
+        segunda.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task DeveRefletirAtivoTrueNoGetAposAtivar()
+    {
+        (Guid alvoId, string _) = await _factory.CriarUsuarioAutenticadoAsync("ativotrue@fcg.com");
+        (Guid _, string? adminToken) = await _factory.CriarUsuarioAutenticadoAsync(
+            "admin-ativotrue@fcg.com",
+            tipo: TipoUsuario.Administrador
+        );
+        HttpClient adminClient = _factory.CreateAuthenticatedClient(adminToken);
+        await adminClient.PatchAsync($"/api/usuarios/{alvoId}/desativar", null);
+
+        await adminClient.PatchAsync($"/api/usuarios/{alvoId}/ativar", null);
+
+        HttpResponseMessage get = await adminClient.GetAsync($"/api/usuarios/{alvoId}");
+        UsuarioResponse? body = await get.Content.ReadFromJsonAsync<UsuarioResponse>(_jsonOptions);
+        body!.Ativo.Should().BeTrue();
+    }
+
     // --- Alterar Tipo (somente Administrador) ---
 
     [Fact]

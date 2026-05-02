@@ -19,7 +19,7 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
   - [Autenticação e Autorização](#autenticação-e-autorização)
     - [Fluxo](#fluxo)
     - [Endpoints de `UsuarioController`](#endpoints-de-usuariocontroller)
-    - [Smoke test pelo Scalar](#smoke-test-pelo-scalar)
+    - [Smoke test pelo Scalar ou Swagger](#smoke-test-pelo-scalar-ou-swagger)
   - [Observabilidade](#observabilidade)
   - [Qualidade de código](#qualidade-de-código)
     - [Analyzers (build e IDE)](#analyzers-build-e-ide)
@@ -48,7 +48,8 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 - **SQL Server + EF Core (Code-First com Migrations)** — persistência relacional
 - **BCrypt.Net-Next** — hashing de senhas
 - **Microsoft.AspNetCore.Authentication.JwtBearer + System.IdentityModel.Tokens.Jwt** — JWT HS256
-- **Scalar + Microsoft.AspNetCore.OpenApi** — documentação interativa da API (equivalente ao Swagger)
+- **Scalar + Microsoft.AspNetCore.OpenApi** — documentação interativa da API
+- **Swashbuckle.AspNetCore.SwaggerUI** — UI alternativa do Swagger apontada para a mesma spec OpenAPI
 - **xUnit + FluentAssertions + Moq** — testes unitários
 - **Microsoft.AspNetCore.Mvc.Testing + Testcontainers.MsSql** — testes de integração
 - **Reqnroll 3.3.4 (xUnit)** — testes BDD com cenários Gherkin em português
@@ -126,11 +127,12 @@ dotnet run --project src/FCG.API
 
 ## CI/CD (GitHub Actions)
 
-O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda automaticamente em todo `push` para `main` ou `feature/**` e em Pull Requests para `main`. Ele executa três jobs paralelos: testes unitários, testes de integração e testes BDD.
+O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda automaticamente em todo `push` para `main` ou `feature/**` e em Pull Requests para `main`. Ele executa quatro jobs:
 
-Os testes de integração usam Testcontainers, que sobe um SQL Server real via Docker — o runner `ubuntu-latest` já tem Docker, então funciona sem configuração extra.
+1. **Testes unitários**, **testes de integração** e **testes BDD** — rodam em paralelo, cada um gerando um relatório de cobertura OpenCover como artefato.
+2. **SonarCloud** — aguarda os três jobs anteriores (`needs`), baixa os artefatos de cobertura e envia a análise consolidada ao SonarCloud (ver seção [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)).
 
-Um segundo workflow, [`.github/workflows/sonar.yml`](.github/workflows/sonar.yml), roda na mesma trigger e envia a análise estática e a cobertura de testes unitários para o SonarCloud (ver seção [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)).
+Os testes de integração e BDD usam Testcontainers, que sobe um SQL Server real via Docker — o runner `ubuntu-latest` já tem Docker, então funciona sem configuração extra.
 
 ### Secrets no repositório
 
@@ -181,11 +183,15 @@ Falhas de autenticação retornam **401** com mensagem genérica `"Credenciais i
 | `PUT` | `/api/usuarios/{id}` | próprio dono **ou** `Administrador` (policy `OwnerOrAdmin`) |
 | `POST` | `/api/usuarios/{id}/alterar-senha` | próprio dono **ou** `Administrador` |
 | `PATCH` | `/api/usuarios/{id}/desativar` | `Administrador` |
+| `PATCH` | `/api/usuarios/{id}/ativar` | `Administrador` (reverte o soft delete) |
 | `PATCH` | `/api/usuarios/{id}/tipo` | `Administrador` (admin não pode rebaixar a si mesmo → 400) |
 
-### Smoke test pelo Scalar
+### Smoke test pelo Scalar ou Swagger
 
-Em desenvolvimento, abra `https://localhost:7222/scalar/v1`. O botão **Authorize** usa o SecurityScheme Bearer (configurado via `BearerSecuritySchemeTransformer`): cole apenas o `accessToken` (sem o prefixo `Bearer`) e os endpoints protegidos passam a enviar o header automaticamente.
+Em desenvolvimento, dois clientes estão disponíveis:
+
+- **Scalar** — `https://localhost:7222/scalar/v1`. O botão **Authorize** usa o SecurityScheme Bearer (configurado via `BearerSecuritySchemeTransformer`): cole apenas o `accessToken` (sem o prefixo `Bearer`) e os endpoints protegidos passam a enviar o header automaticamente.
+- **Swagger UI** — `https://localhost:7222/swagger`. Aponta para a mesma spec (`/openapi/v1.json`); use o botão **Authorize** da mesma forma.
 
 Casos prontos em `src/FCG.API/FCG.API.http` (login → refresh → logout, e Authorization header já preenchido nos endpoints protegidos).
 
@@ -250,13 +256,14 @@ dotnet husky install      # registra o hook no git local
 
 ### Análise de cobertura e qualidade agregada (SonarCloud)
 
-O projeto está integrado ao **SonarCloud** para histórico de análises, métricas de cobertura e quality gates por PR. A configuração está em [`sonar-project.properties`](sonar-project.properties) e o workflow em [`.github/workflows/sonar.yml`](.github/workflows/sonar.yml).
+O projeto está integrado ao **SonarCloud** para histórico de análises, métricas de cobertura e quality gates por PR. A análise é executada pelo job `sonar` dentro do [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
 
-A cada push ou PR o workflow:
+A cada push ou PR o job:
 
-1. Inicia a análise com `dotnet-sonarscanner begin`
-2. Faz o build completo em modo `Release`
-3. Coleta cobertura dos testes unitários com `dotnet-coverage` (formato OpenCover)
-4. Finaliza com `dotnet-sonarscanner end` e envia os resultados ao SonarCloud
+1. Aguarda os três jobs de teste finalizarem (`needs: [unit-tests, integration-tests, bdd-tests]`)
+2. Baixa os relatórios de cobertura OpenCover gerados por cada job
+3. Inicia a análise com `dotnet-sonarscanner begin`
+4. Faz o build completo em modo `Release`
+5. Finaliza com `dotnet-sonarscanner end` e envia a cobertura consolidada ao SonarCloud
 
-Migrations, `obj/` e `bin/` são excluídos da análise via `sonar.exclusions`. O secret `SONAR_TOKEN` precisa estar configurado em `Settings → Secrets → Actions` do repositório.
+Migrations, `obj/` e `bin/` são excluídos da análise via `sonar.exclusions`. DTOs, Options, OpenApi, Logging, `Program.cs` e Requirements são excluídos apenas da métrica de cobertura via `sonar.coverage.exclusions` (o Sonar ainda os analisa para code smells). O secret `SONAR_TOKEN` precisa estar configurado em `Settings → Secrets → Actions` do repositório.

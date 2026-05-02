@@ -19,6 +19,7 @@ public class UsuarioController(
     AtualizarUsuarioUseCase atualizarUsuarioUseCase,
     AlterarSenhaUseCase alterarSenhaUseCase,
     DesativarUsuarioUseCase desativarUsuarioUseCase,
+    AtivarUsuarioUseCase ativarUsuarioUseCase,
     AlterarTipoUsuarioUseCase alterarTipoUsuarioUseCase
 ) : ControllerBase
 {
@@ -218,6 +219,34 @@ public class UsuarioController(
     public async Task<IActionResult> DesativarAsync(Guid id, CancellationToken cancellationToken)
     {
         bool encontrado = await desativarUsuarioUseCase.ExecutarAsync(id, cancellationToken);
+        if (!encontrado)
+            return NotFound();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Ativa um usuário (reverte o soft delete). Operação idempotente.
+    /// </summary>
+    /// <param name="id">Identificador único do usuário.</param>
+    /// <param name="cancellationToken">Token de cancelamento da requisição.</param>
+    /// <response code="204">Usuário ativado (ou já estava ativo).</response>
+    /// <response code="404">Usuário não localizado.</response>
+    /// <response code="429">Limite de requisições excedido.</response>
+    /// <response code="401">Requisição sem token ou com token inválido.</response>
+    /// <response code="403">Apenas administradores podem ativar usuários.</response>
+    /// <response code="500">Erro interno no servidor.</response>
+    [HttpPatch("{id:guid}/ativar")]
+    [Authorize(Roles = "Administrador")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> AtivarAsync(Guid id, CancellationToken cancellationToken)
+    {
+        bool encontrado = await ativarUsuarioUseCase.ExecutarAsync(id, cancellationToken);
         if (!encontrado)
             return NotFound();
 

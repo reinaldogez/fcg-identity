@@ -208,6 +208,28 @@ public class UsuarioTests
     }
 
     [Fact]
+    public void DeveMarcarUsuarioComoAtivoAoAtivar()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+        usuario.Desativar();
+
+        usuario.Ativar();
+
+        usuario.Ativo.Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeveSerIdempotenteAoAtivarUsuarioJaAtivo()
+    {
+        var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
+
+        Action acao = () => usuario.Ativar();
+
+        acao.Should().NotThrow();
+        usuario.Ativo.Should().BeTrue();
+    }
+
+    [Fact]
     public void DeveAlterarTipoParaAdministrador()
     {
         var usuario = Usuario.Criar("Nome", _emailValido, _senhaHashValida);
