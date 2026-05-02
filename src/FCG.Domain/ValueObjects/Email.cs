@@ -7,7 +7,8 @@ public record Email
 {
     private static readonly Regex FormatoValido = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-        RegexOptions.Compiled
+        RegexOptions.Compiled,
+        TimeSpan.FromMilliseconds(100)
     );
 
     private Email(string endereco)

@@ -26,7 +26,20 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Testes Unitários
-        run: dotnet test tests/FCG.Tests.Unit/ --no-build --configuration Release --verbosity normal
+        run: |
+          dotnet test tests/FCG.Tests.Unit/ \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/Unit \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Upload cobertura unitários
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-unit
+          path: TestResults/Unit/**/coverage.opencover.xml
 
   integration-tests:
     name: Testes de Integração
@@ -47,7 +60,20 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Testes de Integração
-        run: dotnet test tests/FCG.Tests.Integration/ --no-build --configuration Release --verbosity normal
+        run: |
+          dotnet test tests/FCG.Tests.Integration/ \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/Integration \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Upload cobertura integração
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-integration
+          path: TestResults/Integration/**/coverage.opencover.xml
 
   bdd-tests:
     name: Testes BDD (Reqnroll)
@@ -68,4 +94,83 @@ jobs:
         run: dotnet build --no-restore --configuration Release
 
       - name: Testes BDD
-        run: dotnet test tests/FCG.Tests.Bdd/ --no-build --configuration Release --verbosity normal
+        run: |
+          dotnet test tests/FCG.Tests.Bdd/ \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./TestResults/Bdd \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+      - name: Upload cobertura BDD
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-bdd
+          path: TestResults/Bdd/**/coverage.opencover.xml
+
+  sonar:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, bdd-tests]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # obrigatório: Sonar usa git blame para identificar código novo
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Download cobertura unitários
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-unit
+          path: TestResults/Unit
+
+      - name: Download cobertura integração
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-integration
+          path: TestResults/Integration
+
+      - name: Download cobertura BDD
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-bdd
+          path: TestResults/Bdd
+
+      - name: Instalar dotnet-sonarscanner
+        run: dotnet tool install --global dotnet-sonarscanner
+
+      - name: Iniciar análise
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          dotnet sonarscanner begin \
+            /k:"reinaldogez_fiap-cloud-games-mvp" \
+            /o:"reinaldogez" \
+            /d:sonar.host.url="https://sonarcloud.io" \
+            /d:sonar.token="$SONAR_TOKEN" \
+            /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
+            /d:sonar.coverage.exclusions="**/Migrations/**,**/DTOs/**,**/Options/**,**/OpenApi/**,**/Logging/**,**/Program.cs,**/*Requirement.cs" \
+            /d:sonar.exclusions="**/Migrations/**,**/obj/**,**/bin/**"
+
+      - name: Build
+        run: dotnet build --no-restore --no-incremental --configuration Release
+
+      - name: Finalizar análise
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
