@@ -14,15 +14,19 @@ public class UsuarioReadRepository(IDbConnectionFactory connectionFactory) : IUs
     {
         using IDbConnection connection = connectionFactory.CreateOpenConnection();
 
-        CommandDefinition command = new(RelatorioUsuariosSql.Query, cancellationToken: cancellationToken);
+        CommandDefinition command = new(
+            RelatorioUsuariosSql.Query,
+            cancellationToken: cancellationToken
+        );
 
         using SqlMapper.GridReader gridReader = await connection.QueryMultipleAsync(command);
 
         TotaisRow totais = await gridReader.ReadFirstAsync<TotaisRow>();
         TotalPorTipoDto porTipo = await gridReader.ReadFirstAsync<TotalPorTipoDto>();
         int cadastrosUltimos30Dias = await gridReader.ReadFirstAsync<int>();
-        IReadOnlyList<CadastroPorMesDto> cadastrosPorMes =
-            (await gridReader.ReadAsync<CadastroPorMesDto>()).AsList();
+        IReadOnlyList<CadastroPorMesDto> cadastrosPorMes = (
+            await gridReader.ReadAsync<CadastroPorMesDto>()
+        ).AsList();
 
         return new RelatorioUsuariosDto(
             totais.TotalUsuarios,

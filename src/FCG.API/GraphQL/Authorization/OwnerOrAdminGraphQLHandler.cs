@@ -48,7 +48,10 @@ public class OwnerOrAdminGraphQLHandler : AuthorizationHandler<OwnerOrAdminRequi
         return Task.CompletedTask;
     }
 
-    private static Guid? TentarLerArgumentoId(IMiddlewareContext resolverContext, string nomeArgumento)
+    private static Guid? TentarLerArgumentoId(
+        IMiddlewareContext resolverContext,
+        string nomeArgumento
+    )
     {
         try
         {

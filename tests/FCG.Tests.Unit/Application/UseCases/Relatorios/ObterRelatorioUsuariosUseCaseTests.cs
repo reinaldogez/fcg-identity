@@ -25,11 +25,7 @@ public class ObterRelatorioUsuariosUseCaseTests
             TotalInativos: 10,
             PorTipo: new TotalPorTipoDto(Usuario: 95, Administrador: 5),
             CadastrosUltimos30Dias: 15,
-            CadastrosPorMes: new List<CadastroPorMesDto>
-            {
-                new("2026-01", 20),
-                new("2026-02", 30),
-            }
+            CadastrosPorMes: new List<CadastroPorMesDto> { new("2026-01", 20), new("2026-02", 30) }
         );
         _repositorioMock
             .Setup(r => r.ObterRelatorioAsync(It.IsAny<CancellationToken>()))
@@ -46,9 +42,7 @@ public class ObterRelatorioUsuariosUseCaseTests
         using CancellationTokenSource cts = new();
         _repositorioMock
             .Setup(r => r.ObterRelatorioAsync(cts.Token))
-            .ReturnsAsync(
-                new RelatorioUsuariosDto(0, 0, 0, new TotalPorTipoDto(0, 0), 0, [])
-            );
+            .ReturnsAsync(new RelatorioUsuariosDto(0, 0, 0, new TotalPorTipoDto(0, 0), 0, []));
 
         await _useCase.ExecutarAsync(cts.Token);
 

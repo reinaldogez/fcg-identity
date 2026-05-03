@@ -54,8 +54,6 @@ public class UsuarioQueries
             throw new DomainAuthException("Acesso negado.");
         }
 
-        return await repositorio
-            .Query()
-            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        return await repositorio.Query().FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
     }
 }

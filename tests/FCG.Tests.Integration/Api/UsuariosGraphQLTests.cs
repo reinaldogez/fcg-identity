@@ -92,9 +92,7 @@ public class UsuariosGraphQLTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     public async Task DeveRecusarConsultaDeOutroUsuarioComoComum()
     {
         (Guid idAlvo, string _) = await _factory.CriarUsuarioAutenticadoAsync("alvo@fcg.com");
-        (Guid _, string tokenOutro) = await _factory.CriarUsuarioAutenticadoAsync(
-            "outro@fcg.com"
-        );
+        (Guid _, string tokenOutro) = await _factory.CriarUsuarioAutenticadoAsync("outro@fcg.com");
         HttpClient client = _factory.CreateAuthenticatedClient(tokenOutro);
 
         string query = $$"""
@@ -114,10 +112,7 @@ public class UsuariosGraphQLTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         errors.GetArrayLength().Should().BeGreaterThan(0);
 
         JsonElement primeiroErro = errors[0];
-        string? code = primeiroErro
-            .GetProperty("extensions")
-            .GetProperty("code")
-            .GetString();
+        string? code = primeiroErro.GetProperty("extensions").GetProperty("code").GetString();
         code.Should().Be("ERRO_DE_AUTENTICACAO");
     }
 

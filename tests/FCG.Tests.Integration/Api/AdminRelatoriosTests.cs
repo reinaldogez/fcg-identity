@@ -65,9 +65,7 @@ public class AdminRelatoriosTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         );
         HttpClient adminClient = _factory.CreateAuthenticatedClient(adminToken);
 
-        HttpResponseMessage resposta = await adminClient.GetAsync(
-            "/api/admin/relatorios/usuarios"
-        );
+        HttpResponseMessage resposta = await adminClient.GetAsync("/api/admin/relatorios/usuarios");
 
         resposta.StatusCode.Should().Be(HttpStatusCode.OK);
         RelatorioUsuariosDto? body = await resposta.Content.ReadFromJsonAsync<RelatorioUsuariosDto>(
