@@ -63,4 +63,6 @@ public class UsuarioRepository(FcgDbContext contexto) : IUsuarioRepository
 
         return (items, total);
     }
+
+    public IQueryable<Usuario> Query() => contexto.Usuarios.AsNoTracking();
 }

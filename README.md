@@ -26,6 +26,18 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
     - [Formatação (CSharpier)](#formatação-csharpier)
     - [Pre-commit hook (Husky)](#pre-commit-hook-husky)
     - [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)
+  - [GraphQL (HotChocolate)](#graphql-hotchocolate)
+    - [Por que GraphQL para leitura?](#por-que-graphql-para-leitura)
+    - [Queries disponíveis](#queries-disponíveis)
+    - [Autenticação](#autenticação)
+    - [Nitro IDE (desenvolvimento)](#nitro-ide-desenvolvimento)
+    - [Exemplos de queries](#exemplos-de-queries)
+    - [Erros GraphQL](#erros-graphql)
+  - [Relatório Administrativo (Dapper)](#relatório-administrativo-dapper)
+    - [Por que Dapper aqui?](#por-que-dapper-aqui)
+    - [Endpoint](#endpoint)
+    - [Resposta](#resposta)
+    - [Seed de desenvolvimento](#seed-de-desenvolvimento)
 
 ## Sobre o projeto
 
@@ -267,3 +279,136 @@ A cada push ou PR o job:
 5. Finaliza com `dotnet-sonarscanner end` e envia a cobertura consolidada ao SonarCloud
 
 Migrations, `obj/` e `bin/` são excluídos da análise via `sonar.exclusions`. DTOs, Options, OpenApi, Logging, `Program.cs` e Requirements são excluídos apenas da métrica de cobertura via `sonar.coverage.exclusions` (o Sonar ainda os analisa para code smells). O secret `SONAR_TOKEN` precisa estar configurado em `Settings → Secrets → Actions` do repositório.
+
+## GraphQL (HotChocolate)
+
+A API expõe uma superfície de **leitura** em `/graphql` usando **HotChocolate v16** com Nitro IDE embutida. A escrita continua exclusivamente via REST, onde a validação de domínio nos use cases já está consolidada.
+
+### Por que GraphQL para leitura?
+
+Permite que clientes admin peçam exatamente os campos que precisam (sem over-fetching), filtrem e ordenem em qualquer combinação sem exigir novos endpoints REST, e paguem apenas pelos dados retornados. Consultas como "listar todos os administradores ativos, do mais recente para o mais antigo, trazendo só `id`, `nome` e `email`" são expressas diretamente na query.
+
+### Queries disponíveis
+
+| Query | Acesso | Descrição |
+|---|---|---|
+| `usuarios(first, after, where, order)` | `Administrador` | Paginação cursor-based, filtragem e ordenação dinâmicas sobre todos os usuários |
+| `usuario(id)` | próprio dono **ou** `Administrador` | Retorna um usuário pelo ID |
+
+O tipo `Usuario` expõe: `id`, `nome`, `email` (achatado do VO), `tipo`, `dataCriacao`, `ativo`. O campo `SenhaHash` **nunca** é exposto.
+
+### Autenticação
+
+Igual ao REST: obtenha o `accessToken` em `POST /api/auth/login` e envie o header `Authorization: Bearer <accessToken>` em cada requisição ao `/graphql`.
+
+### Nitro IDE (desenvolvimento)
+
+Com a API rodando localmente, abra `https://localhost:7222/graphql` no navegador. Na aba **Headers** adicione:
+
+```
+Authorization: Bearer <accessToken>
+```
+
+### Exemplos de queries
+
+O arquivo [`FCG.API.graphql`](FCG.API.graphql) na raiz do repositório contém queries prontas para copiar no Nitro:
+
+```graphql
+# Listar admins ativos do mais recente para o mais antigo
+query AdminsAtivosMaisRecentes {
+  usuarios(
+    first: 10
+    where: { ativo: { eq: true }, tipo: { eq: ADMINISTRADOR } }
+    order: { dataCriacao: DESC }
+  ) {
+    nodes { id nome email tipo dataCriacao }
+    pageInfo { hasNextPage endCursor }
+    totalCount
+  }
+}
+
+# Obter usuário pelo ID (owner ou admin)
+query ObterUsuarioPorId {
+  usuario(id: "00000000-0000-0000-0000-000000000000") {
+    id nome email tipo dataCriacao ativo
+  }
+}
+```
+
+### Erros GraphQL
+
+Erros de domínio são mapeados para o campo `errors` da resposta com um `code` estável em `extensions`:
+
+| `extensions.code` | Origem |
+|---|---|
+| `ERRO_DE_AUTENTICACAO` | Não autenticado ou acesso negado |
+| `ERRO_DE_NEGOCIO` | Regra de negócio violada |
+| `ERRO_DE_VALIDACAO` | Dados inválidos |
+
+```json
+{
+  "errors": [{
+    "message": "Acesso negado.",
+    "extensions": { "code": "ERRO_DE_AUTENTICACAO" }
+  }]
+}
+```
+
+## Relatório Administrativo (Dapper)
+
+O endpoint `GET /api/admin/relatorios/usuarios` utiliza Dapper para consolidar todos os indicadores em uma única viagem ao banco de dados. Essa estratégia evita múltiplas consultas pequenas (problema do N+1) e garante que apenas o resultado final seja trafegado, tornando a geração do relatório extremamente rápida.
+
+### Por que Dapper aqui?
+
+O EF Core é ideal para garantir a integridade das regras de negócio em operações de escrita (cadastro, alteração). Já o Dapper é utilizado em relatórios para otimizar a leitura: ele executa SQL puro em uma única viagem ao banco, garantindo alta performance em contagens e agrupamentos de dados.
+
+A separação é visível na estrutura de pastas (CQRS-lite):
+
+```
+Infrastructure/
+  Persistence/   ← EF Core (write side): DbContext, Configs, Repositórios, Migrations
+  Dapper/        ← Dapper (read side): SqlConnectionFactory, ReadRepositories, Sql
+```
+
+### Endpoint
+
+| Método | Rota | Acesso |
+|---|---|---|
+| `GET` | `/api/admin/relatorios/usuarios` | `Administrador` |
+
+### Resposta
+
+```json
+{
+  "totalUsuarios": 52,
+  "totalAtivos": 48,
+  "totalInativos": 4,
+  "porTipo": {
+    "usuario": 50,
+    "administrador": 2
+  },
+  "cadastrosUltimos30Dias": 12,
+  "cadastrosPorMes": [
+    { "mes": "2025-12", "total": 8 },
+    { "mes": "2026-01", "total": 15 },
+    { "mes": "2026-02", "total": 11 },
+    { "mes": "2026-03", "total": 9 },
+    { "mes": "2026-04", "total": 6 },
+    { "mes": "2026-05", "total": 3 }
+  ]
+}
+```
+
+### Seed de desenvolvimento
+
+Para ter dados realistas durante a demonstração, habilite o `DevSeedService` em `appsettings.Development.json`:
+
+```json
+{
+  "DevSeed": {
+    "Enabled": true
+  }
+}
+```
+
+Na próxima inicialização da API (em ambiente `Development`) serão criados 50 usuários com datas de cadastro distribuídas nos últimos 6 meses. O seed é **idempotente** — se já existirem usuários suficientes, nada é criado.

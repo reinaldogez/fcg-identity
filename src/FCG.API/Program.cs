@@ -3,14 +3,18 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using FCG.API.Authorization;
+using FCG.API.GraphQL;
 using FCG.API.Logging;
 using FCG.API.Middlewares;
 using FCG.API.OpenApi;
 using FCG.Application.Interfaces;
 using FCG.Application.Options;
 using FCG.Application.UseCases;
+using FCG.Application.UseCases.Relatorios;
 using FCG.Domain.Interfaces;
 using FCG.Domain.Services;
+using FCG.Infrastructure.Dapper;
+using FCG.Infrastructure.Dapper.ReadRepositories;
 using FCG.Infrastructure.Persistence;
 using FCG.Infrastructure.Persistence.Repositories;
 using FCG.Infrastructure.Services;
@@ -61,13 +65,43 @@ builder.Services.AddOpenApi(options =>
 IConfigurationSection rateLimitConfig = builder.Configuration.GetSection("RateLimit");
 builder.Services.AddRateLimiter(options =>
 {
-    options.AddFixedWindowLimiter(
+    int permitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
+    TimeSpan window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
+    options.AddPolicy(
         "fixed",
-        opt =>
+        httpContext =>
         {
-            opt.PermitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
-            opt.Window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
-            opt.QueueLimit = 0;
+            string? identity =
+                httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
+                ?? httpContext.User.Identity?.Name;
+
+            if (identity != null)
+            {
+                return RateLimitPartition.GetFixedWindowLimiter(
+                    identity,
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = permitLimit,
+                        Window = window,
+                        QueueLimit = 0,
+                    }
+                );
+            }
+
+            string remoteIp =
+                httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
+                ?? httpContext.Connection.RemoteIpAddress?.ToString()
+                ?? "anonymous";
+
+            return RateLimitPartition.GetFixedWindowLimiter(
+                remoteIp,
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = permitLimit,
+                    Window = window,
+                    QueueLimit = 0,
+                }
+            );
         }
     );
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -135,6 +169,8 @@ builder.Services.AddScoped<ISenhaService, SenhaService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IUsuarioDomainService, UsuarioDomainService>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgDbContext>());
+builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
+builder.Services.AddScoped<IUsuarioReadRepository, UsuarioReadRepository>();
 builder.Services.AddScoped<CadastrarUsuarioUseCase>();
 builder.Services.AddScoped<ObterUsuarioPorIdUseCase>();
 builder.Services.AddScoped<ListarUsuariosUseCase>();
@@ -146,7 +182,14 @@ builder.Services.AddScoped<AlterarTipoUsuarioUseCase>();
 builder.Services.AddScoped<LoginUseCase>();
 builder.Services.AddScoped<RefreshTokenUseCase>();
 builder.Services.AddScoped<LogoutUseCase>();
+builder.Services.AddScoped<ObterRelatorioUsuariosUseCase>();
 builder.Services.AddHostedService<AdminSeedService>();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHostedService<DevSeedService>();
+}
+
+builder.Services.AddFcgGraphQL();
 
 WebApplication app = builder.Build();
 
@@ -161,9 +204,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRateLimiter();
 app.UseAuthentication();
+app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
+app.MapGraphQL("/graphql");
 
 await app.RunAsync();

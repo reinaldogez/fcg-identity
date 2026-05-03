@@ -15,4 +15,7 @@ public interface IUsuarioRepository
         int tamanhoPagina,
         CancellationToken cancellationToken = default
     );
+
+    // Exposto exclusivamente para projeções de leitura (GraphQL com filtering/sorting/paging).
+    IQueryable<Usuario> Query();
 }
