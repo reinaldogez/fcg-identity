@@ -20,8 +20,5 @@ public class RefreshTokenRepository(FcgDbContext contexto) : IRefreshTokenReposi
     public async Task AdicionarAsync(
         RefreshToken refreshToken,
         CancellationToken cancellationToken = default
-    )
-    {
-        await contexto.RefreshTokens.AddAsync(refreshToken, cancellationToken);
-    }
+    ) => await contexto.RefreshTokens.AddAsync(refreshToken, cancellationToken);
 }

@@ -13,10 +13,8 @@ public class ListarUsuariosUseCaseTests
     private readonly Mock<IUsuarioRepository> _repositorioMock = new();
     private readonly ListarUsuariosUseCase _useCase;
 
-    public ListarUsuariosUseCaseTests()
-    {
+    public ListarUsuariosUseCaseTests() =>
         _useCase = new ListarUsuariosUseCase(_repositorioMock.Object);
-    }
 
     [Fact]
     public async Task DeveRetornarListaPaginadaComTotal()

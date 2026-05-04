@@ -66,7 +66,7 @@ IConfigurationSection rateLimitConfig = builder.Configuration.GetSection("RateLi
 builder.Services.AddRateLimiter(options =>
 {
     int permitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
-    TimeSpan window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
+    var window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
     options.AddPolicy(
         "fixed",
         httpContext =>

@@ -9,10 +9,8 @@ public class FcgDbContext(DbContextOptions<FcgDbContext> options) : DbContext(op
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
-    public async Task SalvarAlteracoesAsync(CancellationToken cancellationToken = default)
-    {
+    public async Task SalvarAlteracoesAsync(CancellationToken cancellationToken = default) =>
         await SaveChangesAsync(cancellationToken);
-    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

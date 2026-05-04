@@ -10,7 +10,7 @@ namespace FCG.Tests.Bdd.Steps;
 [Binding]
 public class CommonSteps(CenarioEstado estado)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     [Then(@"recebo o status (.*)")]
     public void EntaoReceboOStatus(int statusEsperado)
@@ -24,7 +24,7 @@ public class CommonSteps(CenarioEstado estado)
     {
         estado.UltimaResposta.Should().NotBeNull();
         string json = await estado.UltimaResposta!.Content.ReadAsStringAsync();
-        ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, JsonOptions);
+        ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, _jsonOptions);
         problem.Should().NotBeNull();
 
         string[] erros = problem!
@@ -42,7 +42,7 @@ public class CommonSteps(CenarioEstado estado)
     {
         estado.UltimaResposta.Should().NotBeNull();
         string json = await estado.UltimaResposta!.Content.ReadAsStringAsync();
-        ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, JsonOptions);
+        ProblemDetails? problem = JsonSerializer.Deserialize<ProblemDetails>(json, _jsonOptions);
         problem.Should().NotBeNull();
 
         string[] erros = problem!

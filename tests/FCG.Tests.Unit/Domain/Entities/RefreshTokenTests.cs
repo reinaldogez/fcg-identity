@@ -7,18 +7,18 @@ namespace FCG.Tests.Unit.Domain.Entities;
 public class RefreshTokenTests
 {
     private const string Hash = "hash-valido";
-    private static readonly Guid UsuarioId = Guid.NewGuid();
-    private static readonly DateTime ExpiraEm = DateTime.UtcNow.AddDays(7);
+    private static readonly Guid _usuarioId = Guid.NewGuid();
+    private static readonly DateTime _expiraEm = DateTime.UtcNow.AddDays(7);
 
     [Fact]
     public void DeveCriarRefreshTokenComDadosValidos()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
 
         token.Id.Should().NotBe(Guid.Empty);
-        token.UsuarioId.Should().Be(UsuarioId);
+        token.UsuarioId.Should().Be(_usuarioId);
         token.TokenHash.Should().Be(Hash);
-        token.ExpiraEm.Should().Be(ExpiraEm);
+        token.ExpiraEm.Should().Be(_expiraEm);
         token.RevogadoEm.Should().BeNull();
         token.SubstituidoPor.Should().BeNull();
         token.EstaAtivo.Should().BeTrue();
@@ -27,7 +27,7 @@ public class RefreshTokenTests
     [Fact]
     public void DeveRejeitarUsuarioIdVazio()
     {
-        Action acao = () => RefreshToken.Criar(Guid.Empty, Hash, ExpiraEm);
+        Action acao = () => RefreshToken.Criar(Guid.Empty, Hash, _expiraEm);
 
         acao.Should().Throw<DomainException>().WithMessage("*usuário*");
     }
@@ -38,7 +38,7 @@ public class RefreshTokenTests
     [InlineData(null)]
     public void DeveRejeitarHashVazio(string? hash)
     {
-        Action acao = () => RefreshToken.Criar(UsuarioId, hash!, ExpiraEm);
+        Action acao = () => RefreshToken.Criar(_usuarioId, hash!, _expiraEm);
 
         acao.Should().Throw<DomainException>().WithMessage("*hash*");
     }
@@ -46,7 +46,7 @@ public class RefreshTokenTests
     [Fact]
     public void DeveRejeitarExpiracaoNoPassado()
     {
-        Action acao = () => RefreshToken.Criar(UsuarioId, Hash, DateTime.UtcNow.AddSeconds(-1));
+        Action acao = () => RefreshToken.Criar(_usuarioId, Hash, DateTime.UtcNow.AddSeconds(-1));
 
         acao.Should().Throw<DomainException>().WithMessage("*futura*");
     }
@@ -54,7 +54,7 @@ public class RefreshTokenTests
     [Fact]
     public async Task EstaAtivoDeveSerFalseQuandoExpirado()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, DateTime.UtcNow.AddMilliseconds(50));
+        var token = RefreshToken.Criar(_usuarioId, Hash, DateTime.UtcNow.AddMilliseconds(50));
 
         await Task.Delay(100);
 
@@ -64,7 +64,7 @@ public class RefreshTokenTests
     [Fact]
     public void EstaAtivoDeveSerFalseQuandoRevogado()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
 
         token.Revogar();
 
@@ -75,7 +75,7 @@ public class RefreshTokenTests
     [Fact]
     public async Task RevogarDeveSerIdempotente()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
         token.Revogar();
         DateTime primeiro = token.RevogadoEm!.Value;
 
@@ -88,7 +88,7 @@ public class RefreshTokenTests
     [Fact]
     public void RevogarESubstituirPorDeveMarcarSubstituicao()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
         var substitutoId = Guid.NewGuid();
 
         token.RevogarESubstituirPor(substitutoId);
@@ -101,7 +101,7 @@ public class RefreshTokenTests
     [Fact]
     public void RevogarESubstituirPorDeveLancarSeJaRevogado()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
         token.Revogar();
 
         Action acao = () => token.RevogarESubstituirPor(Guid.NewGuid());
@@ -112,7 +112,7 @@ public class RefreshTokenTests
     [Fact]
     public void RevogarESubstituirPorDeveRejeitarSubstitutoVazio()
     {
-        var token = RefreshToken.Criar(UsuarioId, Hash, ExpiraEm);
+        var token = RefreshToken.Criar(_usuarioId, Hash, _expiraEm);
 
         Action acao = () => token.RevogarESubstituirPor(Guid.Empty);
 

@@ -84,19 +84,20 @@ dotnet_style_qualification_for_property = false:suggestion
 dotnet_style_qualification_for_method = false:suggestion
 dotnet_style_qualification_for_event = false:suggestion
 
-# --- Access modifiers (always explicit) -------------------------------------
-dotnet_style_require_accessibility_modifiers = always:suggestion
+# --- Access modifiers (explicit for non-interface members) -------------------------------------
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
 csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
 
 # --- Expression body members ------------------------------------------------
-csharp_style_expression_bodied_methods = when_on_single_line:suggestion
-csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
-csharp_style_expression_bodied_operators = when_on_single_line:suggestion
-csharp_style_expression_bodied_properties = when_on_single_line:suggestion
-csharp_style_expression_bodied_indexers = when_on_single_line:suggestion
-csharp_style_expression_bodied_accessors = when_on_single_line:suggestion
+# Só transforma em => se o conteúdo couber em uma única linha
+csharp_style_expression_bodied_methods = when_on_single_line:warning
+csharp_style_expression_bodied_constructors = when_on_single_line:warning
+csharp_style_expression_bodied_operators = when_on_single_line:warning
+csharp_style_expression_bodied_properties = when_on_single_line:warning
+csharp_style_expression_bodied_indexers = when_on_single_line:warning
+csharp_style_expression_bodied_accessors = when_on_single_line:warning
 csharp_style_expression_bodied_lambdas = true:silent
-csharp_style_expression_bodied_local_functions = when_on_single_line:suggestion
+csharp_style_expression_bodied_local_functions = when_on_single_line:warning
 
 # --- Pattern matching -------------------------------------------------------
 csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
@@ -128,9 +129,12 @@ csharp_style_inlined_variable_declaration = true:suggestion
 csharp_style_deconstructed_variable_declaration = true:suggestion
 csharp_style_prefer_local_over_anonymous_function = true:suggestion
 
-# --- Modern C# features (.NET 8 / C# 12) ------------------------------------
+# --- Modern C# features (.NET 10 / C# 14) ------------------------------------
 csharp_style_prefer_switch_expression = true:suggestion
-csharp_style_prefer_primary_constructors = true:suggestion
+# Primary Constructors: Reduz boilerplate de injeção de dependência
+csharp_style_prefer_primary_constructors = true:warning
+dotnet_diagnostic.IDE0290.severity = warning
+
 csharp_prefer_static_local_function = true:suggestion
 csharp_style_prefer_collection_expression = true:suggestion
 

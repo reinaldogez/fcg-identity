@@ -2,12 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace FCG.API.Authorization;
 
-public class OwnerOrAdminRequirement : IAuthorizationRequirement
+public class OwnerOrAdminRequirement(string routeParameterName = "id") : IAuthorizationRequirement
 {
-    public OwnerOrAdminRequirement(string routeParameterName = "id")
-    {
-        RouteParameterName = routeParameterName;
-    }
-
-    public string RouteParameterName { get; }
+    public string RouteParameterName { get; } = routeParameterName;
 }

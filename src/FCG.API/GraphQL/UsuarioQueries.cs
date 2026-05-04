@@ -22,10 +22,8 @@ public class UsuarioQueries
     [UsePaging(IncludeTotalCount = true, MaxPageSize = 100, DefaultPageSize = 20)]
     [UseFiltering]
     [UseSorting]
-    public IQueryable<Usuario> GetUsuarios([Service] IUsuarioRepository repositorio)
-    {
-        return repositorio.Query();
-    }
+    public IQueryable<Usuario> GetUsuarios([Service] IUsuarioRepository repositorio) =>
+        repositorio.Query();
 
     /// <summary>
     /// Obtém um usuário específico. Acessível pelo próprio dono ou por administradores.

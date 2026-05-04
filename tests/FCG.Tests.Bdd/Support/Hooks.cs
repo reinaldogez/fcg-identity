@@ -20,10 +20,7 @@ public class Hooks(IObjectContainer objectContainer)
     }
 
     [AfterTestRun]
-    public static async Task AfterTestRun()
-    {
-        await _factory.DisposeAsync();
-    }
+    public static async Task AfterTestRun() => await _factory.DisposeAsync();
 
     [BeforeScenario]
     public async Task BeforeScenario()

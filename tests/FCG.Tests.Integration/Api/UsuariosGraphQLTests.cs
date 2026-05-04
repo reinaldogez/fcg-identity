@@ -7,19 +7,14 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace FCG.Tests.Integration.Api;
 
-public class UsuariosGraphQLTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
+public class UsuariosGraphQLTests(FcgApiFactory factory) : IClassFixture<FcgApiFactory>, IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly FcgApiFactory _factory;
-
-    public UsuariosGraphQLTests(FcgApiFactory factory)
-    {
-        _factory = factory;
-    }
+    private readonly FcgApiFactory _factory = factory;
 
     public Task InitializeAsync() => _factory.ResetarBancoAsync();
 

@@ -10,7 +10,7 @@ namespace FCG.Tests.Bdd.Steps;
 [Binding]
 public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     [Given(@"que existe um usuario com email ""(.*)"" e senha ""(.*)""")]
     public async Task DadoQueExisteUmUsuarioComEmailESenha(string email, string senha)
@@ -35,7 +35,7 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
             .BeTrue($"pré-condição: login de '{email}' deveria ter retornado 2xx");
 
         string json = await estado.UltimaResposta.Content.ReadAsStringAsync();
-        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, JsonOptions);
+        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, _jsonOptions);
         loginResponse.Should().NotBeNull();
 
         estado.TokenAcesso = loginResponse!.AccessToken;
@@ -69,7 +69,7 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
     {
         estado.UltimaResposta.Should().NotBeNull();
         string json = await estado.UltimaResposta!.Content.ReadAsStringAsync();
-        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, JsonOptions);
+        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, _jsonOptions);
         loginResponse.Should().NotBeNull();
         loginResponse!.AccessToken.Should().NotBeNullOrWhiteSpace();
         loginResponse.RefreshToken.Should().NotBeNullOrWhiteSpace();
@@ -80,7 +80,7 @@ public class AutenticacaoSteps(HttpClient client, CenarioEstado estado)
     {
         estado.UltimaResposta.Should().NotBeNull();
         string json = await estado.UltimaResposta!.Content.ReadAsStringAsync();
-        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, JsonOptions);
+        LoginResponse? loginResponse = JsonSerializer.Deserialize<LoginResponse>(json, _jsonOptions);
         loginResponse.Should().NotBeNull();
         loginResponse!.AccessToken.Should().NotBeNullOrWhiteSpace();
         loginResponse.RefreshToken.Should().NotBeNullOrWhiteSpace();

@@ -13,10 +13,8 @@ public class AtivarUsuarioUseCaseTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly AtivarUsuarioUseCase _useCase;
 
-    public AtivarUsuarioUseCaseTests()
-    {
+    public AtivarUsuarioUseCaseTests() =>
         _useCase = new AtivarUsuarioUseCase(_repositorioMock.Object, _unitOfWorkMock.Object);
-    }
 
     [Fact]
     public async Task DeveAtivarUsuarioInativo()

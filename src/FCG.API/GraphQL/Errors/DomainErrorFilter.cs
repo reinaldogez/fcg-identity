@@ -20,8 +20,6 @@ public class DomainErrorFilter : IErrorFilter
         };
     }
 
-    private static IError CriarErro(IError original, string mensagem, string code)
-    {
-        return original.WithMessage(mensagem).SetExtension("code", code);
-    }
+    private static IError CriarErro(IError original, string mensagem, string code) =>
+        original.WithMessage(mensagem).SetExtension("code", code);
 }

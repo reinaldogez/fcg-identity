@@ -5,16 +5,13 @@ namespace FCG.Domain.ValueObjects;
 
 public record Email
 {
-    private static readonly Regex FormatoValido = new(
+    private static readonly Regex _formatoValido = new(
         @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
         RegexOptions.Compiled,
         TimeSpan.FromMilliseconds(100)
     );
 
-    private Email(string endereco)
-    {
-        Endereco = endereco;
-    }
+    private Email(string endereco) => Endereco = endereco;
 
     public string Endereco { get; }
 
@@ -29,7 +26,7 @@ public record Email
         endereco = endereco.Trim().ToLowerInvariant();
 #pragma warning restore CA1308
 
-        if (!FormatoValido.IsMatch(endereco))
+        if (!_formatoValido.IsMatch(endereco))
         {
             throw new DomainException("O formato do e-mail é inválido.");
         }

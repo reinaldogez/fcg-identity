@@ -5,10 +5,7 @@ namespace FCG.Domain.ValueObjects;
 
 public partial record Senha
 {
-    private Senha(string texto)
-    {
-        Texto = texto;
-    }
+    private Senha(string texto) => Texto = texto;
 
     public string Texto { get; }
 

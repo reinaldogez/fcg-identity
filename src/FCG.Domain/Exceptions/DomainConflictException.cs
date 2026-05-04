@@ -1,7 +1,3 @@
 namespace FCG.Domain.Exceptions;
 
-public class DomainConflictException : DomainException
-{
-    public DomainConflictException(string mensagem)
-        : base(mensagem) { }
-}
+public class DomainConflictException(string mensagem) : DomainException(mensagem) { }

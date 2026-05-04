@@ -12,16 +12,14 @@ namespace FCG.Tests.Unit.Application.UseCases;
 
 public class AlterarTipoUsuarioUseCaseTests
 {
-    private static readonly Guid SolicitanteAdminId = Guid.NewGuid();
+    private static readonly Guid _solicitanteAdminId = Guid.NewGuid();
 
     private readonly Mock<IUsuarioRepository> _repositorioMock = new();
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly AlterarTipoUsuarioUseCase _useCase;
 
-    public AlterarTipoUsuarioUseCaseTests()
-    {
+    public AlterarTipoUsuarioUseCaseTests() =>
         _useCase = new AlterarTipoUsuarioUseCase(_repositorioMock.Object, _unitOfWorkMock.Object);
-    }
 
     [Fact]
     public async Task DeveAlterarTipoParaAdministrador()
@@ -33,7 +31,7 @@ public class AlterarTipoUsuarioUseCaseTests
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
             usuario.Id,
-            SolicitanteAdminId,
+            _solicitanteAdminId,
             new AlterarTipoRequest(TipoUsuario.Administrador)
         );
 
@@ -51,7 +49,7 @@ public class AlterarTipoUsuarioUseCaseTests
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
             usuario.Id,
-            SolicitanteAdminId,
+            _solicitanteAdminId,
             new AlterarTipoRequest(TipoUsuario.Usuario)
         );
 
@@ -67,7 +65,7 @@ public class AlterarTipoUsuarioUseCaseTests
 
         UsuarioResponse? resultado = await _useCase.ExecutarAsync(
             Guid.NewGuid(),
-            SolicitanteAdminId,
+            _solicitanteAdminId,
             new AlterarTipoRequest(TipoUsuario.Administrador)
         );
 
@@ -84,7 +82,7 @@ public class AlterarTipoUsuarioUseCaseTests
 
         await _useCase.ExecutarAsync(
             usuario.Id,
-            SolicitanteAdminId,
+            _solicitanteAdminId,
             new AlterarTipoRequest(TipoUsuario.Administrador)
         );
 

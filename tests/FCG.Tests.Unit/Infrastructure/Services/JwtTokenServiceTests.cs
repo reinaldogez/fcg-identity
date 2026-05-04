@@ -233,8 +233,6 @@ public class JwtTokenServiceTests
         hash.Should().Be(gerado.Hash);
     }
 
-    private static JwtSecurityToken LerToken(string tokenString)
-    {
-        return new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
-    }
+    private static JwtSecurityToken LerToken(string tokenString) =>
+        new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
 }

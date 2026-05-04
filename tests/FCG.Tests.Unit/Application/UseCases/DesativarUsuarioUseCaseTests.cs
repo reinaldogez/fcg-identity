@@ -13,10 +13,8 @@ public class DesativarUsuarioUseCaseTests
     private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
     private readonly DesativarUsuarioUseCase _useCase;
 
-    public DesativarUsuarioUseCaseTests()
-    {
+    public DesativarUsuarioUseCaseTests() =>
         _useCase = new DesativarUsuarioUseCase(_repositorioMock.Object, _unitOfWorkMock.Object);
-    }
 
     [Fact]
     public async Task DeveDesativarUsuarioAtivo()

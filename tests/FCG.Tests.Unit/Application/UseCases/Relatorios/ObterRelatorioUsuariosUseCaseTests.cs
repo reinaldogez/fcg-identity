@@ -11,10 +11,8 @@ public class ObterRelatorioUsuariosUseCaseTests
     private readonly Mock<IUsuarioReadRepository> _repositorioMock = new();
     private readonly ObterRelatorioUsuariosUseCase _useCase;
 
-    public ObterRelatorioUsuariosUseCaseTests()
-    {
+    public ObterRelatorioUsuariosUseCaseTests() =>
         _useCase = new ObterRelatorioUsuariosUseCase(_repositorioMock.Object);
-    }
 
     [Fact]
     public async Task DeveRetornarRelatorioRetornadoPeloRepositorio()

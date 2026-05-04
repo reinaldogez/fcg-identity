@@ -10,7 +10,7 @@ namespace FCG.Tests.Bdd.Steps;
 [Binding]
 public class CadastroUsuarioSteps(HttpClient client, CenarioEstado estado)
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions _jsonOptions = new(JsonSerializerDefaults.Web);
 
     [Given(@"que ja existe um usuario com email ""(.*)"" e senha ""(.*)""")]
     public async Task DadoQueJaExisteUmUsuarioComEmailESenha(string email, string senha)
@@ -40,7 +40,7 @@ public class CadastroUsuarioSteps(HttpClient client, CenarioEstado estado)
     {
         estado.UltimaResposta.Should().NotBeNull();
         string json = await estado.UltimaResposta!.Content.ReadAsStringAsync();
-        UsuarioResponse? usuario = JsonSerializer.Deserialize<UsuarioResponse>(json, JsonOptions);
+        UsuarioResponse? usuario = JsonSerializer.Deserialize<UsuarioResponse>(json, _jsonOptions);
         usuario.Should().NotBeNull();
         usuario!.Id.Should().NotBe(Guid.Empty);
     }

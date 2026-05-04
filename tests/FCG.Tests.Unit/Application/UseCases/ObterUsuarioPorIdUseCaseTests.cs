@@ -14,10 +14,8 @@ public class ObterUsuarioPorIdUseCaseTests
     private readonly Mock<IUsuarioRepository> _repositorioMock = new();
     private readonly ObterUsuarioPorIdUseCase _useCase;
 
-    public ObterUsuarioPorIdUseCaseTests()
-    {
+    public ObterUsuarioPorIdUseCaseTests() =>
         _useCase = new ObterUsuarioPorIdUseCase(_repositorioMock.Object);
-    }
 
     [Fact]
     public async Task DeveRetornarUsuarioQuandoEncontrado()
