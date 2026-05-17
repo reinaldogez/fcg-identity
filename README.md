@@ -1,3 +1,15 @@
+# fcg-identity
+
+> **Origem deste repositório**
+>
+> Este repositório nasceu a partir de [`reinaldogez/fiap-cloud-games-mvp`](https://github.com/reinaldogez/fiap-cloud-games-mvp), que entrega a Fase 1 do Tech Challenge da Pós-Graduação em Arquitetura de Sistemas .NET (FIAP). Todo o histórico de commits do MVP foi preservado aqui — `git log` mostra a evolução completa desde o início da Fase 1.
+>
+> O MVP **continua existindo separadamente** e está congelado como entrega da Fase 1. A partir deste ponto, `fcg-identity` segue um caminho próprio: refatorar o módulo de Usuários/Autenticação do monolito em um microsserviço de identidade dedicado, dentro da evolução da plataforma FIAP Cloud Games em direção a microsserviços.
+>
+> O conteúdo abaixo é a documentação do MVP **tal qual estava no momento da bifurcação** e ainda não foi atualizado para refletir o escopo deste repositório (nomes de solution/projetos, namespaces, `Jwt:Issuer`/`Audience`, etc., continuam como `FCG.*` por enquanto). A renomeação será feita em um commit dedicado.
+
+---
+
 # FIAP Cloud Games MVP
 MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challenge da Pós-Graduação em Arquitetura de Sistemas .NET (FIAP), utilizando DDD, EF Core e Autenticação JWT.
 
