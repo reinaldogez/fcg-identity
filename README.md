@@ -19,7 +19,9 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
   - [Sobre o projeto](#sobre-o-projeto)
   - [Stack](#stack)
   - [Estrutura de pastas](#estrutura-de-pastas)
+    - [Modelagem do Domain](#modelagem-do-domain)
   - [Configuração local (primeira vez)](#configuração-local-primeira-vez)
+    - [Pré-requisitos](#pré-requisitos)
     - [1. Criar o arquivo de variáveis de ambiente](#1-criar-o-arquivo-de-variáveis-de-ambiente)
     - [2. Subir o SQL Server via Docker](#2-subir-o-sql-server-via-docker)
     - [3. Configurar os secrets da aplicação](#3-configurar-os-secrets-da-aplicação)
@@ -29,12 +31,21 @@ MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challe
     - [Secrets no repositório](#secrets-no-repositório)
   - [Como rodar os testes](#como-rodar-os-testes)
   - [Autenticação e Autorização](#autenticação-e-autorização)
+    - [Access token, claims e configuração JWT](#access-token-claims-e-configuração-jwt)
     - [Fluxo](#fluxo)
     - [Endpoints de `UsuarioController`](#endpoints-de-usuariocontroller)
+    - [Policy `OwnerOrAdmin`](#policy-owneroradmin)
+    - [Rate Limiting](#rate-limiting)
     - [Smoke test pelo Scalar ou Swagger](#smoke-test-pelo-scalar-ou-swagger)
+  - [Tratamento de Erros](#tratamento-de-erros)
+    - [Hierarquia de Exceptions](#hierarquia-de-exceptions)
+    - [Middleware Global](#middleware-global)
   - [Observabilidade](#observabilidade)
   - [Qualidade de código](#qualidade-de-código)
     - [Analyzers (build e IDE)](#analyzers-build-e-ide)
+      - [.editorconfig + Roslyn built-in](#editorconfig--roslyn-built-in)
+      - [StyleCop.Analyzers](#stylecopanalyzers)
+      - [SonarAnalyzer.CSharp](#sonaranalyzercsharp)
     - [Formatação (CSharpier)](#formatação-csharpier)
     - [Pre-commit hook (Husky)](#pre-commit-hook-husky)
     - [Análise de cobertura e qualidade agregada (SonarCloud)](#análise-de-cobertura-e-qualidade-agregada-sonarcloud)
@@ -59,7 +70,7 @@ A FIAP Cloud Games (FCG) será uma plataforma de venda de jogos digitais e gest�
 
 - **Cadastro de usuários** identificados por nome, e-mail e senha. O e-mail é validado quanto ao formato e a senha precisa ter pelo menos 8 caracteres, com letras, números e caracteres especiais. As senhas nunca são guardadas em texto puro — apenas o hash BCrypt vai para o banco.
 - **Autenticação via JWT** com dois níveis de acesso: usuário comum (acessa a plataforma) e administrador (administra usuários). O login devolve um access token de 1 hora e um refresh token de 7 dias, que pode ser trocado por um novo par sem precisar fazer login de novo. A cada renovação o refresh token anterior é revogado, e o logout invalida o refresh token apresentado.
-- **Gestão de perfil:** atualizar dados, trocar de senha, desativar a conta (soft delete) e alterar o tipo de usuário. As regras de quem pode fazer o quê são aplicadas via políticas de autorização (por exemplo: o próprio usuário ou um administrador podem alterar dados; só administradores podem desativar contas).
+- **Gestão de perfil:** atualizar dados, trocar de senha, desativar a conta (soft delete), reativar a conta e alterar o tipo de usuário. As regras de quem pode fazer o quê são aplicadas via políticas de autorização (por exemplo: o próprio usuário ou um administrador podem alterar dados; só administradores podem desativar contas).
 - **API REST com Controllers MVC** em .NET 10, documentada com OpenAPI (Scalar) — os endpoints podem ser explorados diretamente pelo navegador em `https://localhost:7222/scalar/v1`.
 - **Middleware global de erros** que captura exceções e devolve respostas padronizadas (formato `ProblemDetails`, RFC 7807) com um `traceId` em cada resposta para facilitar a correlação com logs.
 - **Persistência com Entity Framework Core** (Code-First) e migrations versionadas, usando SQL Server.
@@ -97,9 +108,23 @@ tests/
   FCG.Tests.Bdd           → BDD com Reqnroll: cenários Gherkin (PT-BR) para os módulos de cadastro e autenticação.
 ```
 
+### Modelagem do Domain
+
+O Domain concentra três padrões DDD aplicados de forma deliberada:
+
+- **Value Objects imutáveis** (`Email`, `Senha`, `SenhaHash`) implementados como `record` com factory method estático que valida o conteúdo antes do objeto existir. Um e-mail malformado faz `Email.Criar` lançar `DomainException` antes da entidade `Usuario` ser instanciada — a validação não chega ao banco nem aos use cases. Para a materialização vinda do EF Core, cada VO expõe um par `Criar`/`Validar` (valida) + `Reconstituir` (sem validação, para dados já confiáveis no banco).
+- **Entidades ricas** com construtor privado e factory method estático (`Usuario.Criar(...)`). Um `Usuario` em estado inválido é impossível por construção, e regras invariantes vivem dentro da entidade — por exemplo, `AlterarTipoSolicitadoPor(novoTipo, solicitanteId)` impede que um administrador rebaixe a si mesmo, lançando `DomainException` antes de qualquer toque no banco.
+- **Domain Services** para regras que exigem acesso ao repositório (e portanto não cabem dentro da entidade). `IUsuarioDomainService.RegistrarAsync` é o exemplo: a unicidade de e-mail é uma regra de negócio que precisa consultar o `IUsuarioRepository`, e fica encapsulada num serviço de domínio em vez de poluir o use case com `if`s de regra.
+
 ## Configuração local (primeira vez)
 
 Secrets nunca ficam no repositório. Configure via `.env` (Docker) e .NET User Secrets (aplicação).
+
+### Pré-requisitos
+
+*   **SDK do .NET 10** ou superior.
+*   **Docker Desktop** (ou daemon equivalente) para o SQL Server.
+*   **Entity Framework Core CLI** (`dotnet tool install --global dotnet-ef`).
 
 ### 1. Criar o arquivo de variáveis de ambiente
 
@@ -197,6 +222,22 @@ Os testes de integração e BDD usam `Testcontainers.MsSql` para subir uma inst�
 
 A API usa **JWT Bearer** com dois níveis de acesso (`Usuario` e `Administrador`) e refresh tokens com **rotação**.
 
+### Access token, claims e configuração JWT
+
+O access token é assinado em **HS256** com a chave de `Jwt:SigningKey` e carrega as claims:
+
+| Claim | Conteúdo |
+|---|---|
+| `sub` | `Id` do usuário (`Guid`) — usado pela policy `OwnerOrAdmin` |
+| `email` | E-mail do usuário |
+| `name` | Nome do usuário |
+| `jti` | Identificador único do token (`Guid`) |
+| `role` | `Usuario` ou `Administrador` |
+
+A assinatura simétrica é adequada ao cenário de monolito MVP, em que o emissor e o validador do token são o mesmo serviço. Em uma futura evolução para microsserviços, a transição natural seria para **RS256** (par de chaves assimétricas) — cada serviço validaria o token apenas com a chave pública, sem precisar compartilhar o segredo de assinatura.
+
+> **Detalhe de configuração:** o `JwtBearerHandler` é configurado com `MapInboundClaims = false` e `NameClaimType = JwtRegisteredClaimNames.Sub`. Sem isso, o ASP.NET Core mapeia `sub` para `ClaimTypes.NameIdentifier` por padrão, e a policy `OwnerOrAdmin` (que lê `JwtRegisteredClaimNames.Sub` diretamente) silenciosamente deixa de funcionar.
+
 ### Fluxo
 
 1. **Login** — `POST /api/auth/login` com `{ "email", "senha" }` retorna:
@@ -228,6 +269,37 @@ Falhas de autenticação retornam **401** com mensagem genérica `"Credenciais i
 | `PATCH` | `/api/usuarios/{id}/ativar` | `Administrador` (reverte o soft delete) |
 | `PATCH` | `/api/usuarios/{id}/tipo` | `Administrador` (admin não pode rebaixar a si mesmo → 400) |
 
+### Policy `OwnerOrAdmin`
+
+Endpoints com a marca *próprio dono **ou** `Administrador`* na tabela acima usam uma policy customizada em vez de `if`s de autorização espalhados pelos controllers. O `OwnerOrAdminHandler` (em `src/FCG.API/Authorization/`) resolve o requisito da seguinte forma:
+
+- Se o token tem `role = Administrador`, o acesso é liberado.
+- Caso contrário, o handler compara o claim `sub` do token com o parâmetro `{id}` da rota — se forem iguais, libera; senão, retorna 403.
+
+Concentrar a regra em um único handler facilita manutenção e auditoria: qualquer mudança no critério de "próprio dono" reflete automaticamente em todos os endpoints decorados com `[Authorize(Policy = "OwnerOrAdmin")]`. Em endpoints exclusivamente administrativos, a marcação direta `[Authorize(Roles = "Administrador")]` é suficiente e dispensa a policy.
+
+### Rate Limiting
+
+Todos os controllers REST estão decorados com `[EnableRateLimiting("fixed")]`, que aplica uma policy Fixed Window com particionamento híbrido:
+
+- **Requisições autenticadas** — partição pelo claim `sub` do JWT, ou seja, cada usuário consome a própria janela.
+- **Requisições anônimas** — partição pelo header `X-Forwarded-For` (ou `RemoteIpAddress` quando ausente), ou seja, o limite é por endereço de origem.
+
+A separação evita que um usuário legítimo seja bloqueado pelo abuso de outro na mesma rede corporativa, e ao mesmo tempo impede que um cliente anônimo distribua tentativas entre múltiplos endpoints sem ser limitado.
+
+Os limites são lidos da seção `RateLimit` do `appsettings.json`:
+
+```json
+{
+  "RateLimit": {
+    "PermitLimit": 10,
+    "WindowInSeconds": 60
+  }
+}
+```
+
+Ao exceder o limite a API retorna **429 Too Many Requests**. Em testes de integração o `PermitLimit` é sobrescrito para `int.MaxValue` via `FcgApiFactory`, evitando flakiness por janela compartilhada entre cenários. No pipeline de middlewares, `UseAuthentication()` vem **antes** de `UseRateLimiter()` para garantir que `httpContext.User` esteja populado quando a policy resolve a chave de particionamento.
+
 ### Smoke test pelo Scalar ou Swagger
 
 Em desenvolvimento, dois clientes estão disponíveis:
@@ -236,6 +308,44 @@ Em desenvolvimento, dois clientes estão disponíveis:
 - **Swagger UI** — `https://localhost:7222/swagger`. Aponta para a mesma spec (`/openapi/v1.json`); use o botão **Authorize** da mesma forma.
 
 Casos prontos em `src/FCG.API/FCG.API.http` (login → refresh → logout, e Authorization header já preenchido nos endpoints protegidos).
+
+## Tratamento de Erros
+
+O projeto utiliza uma estratégia de tratamento de erros centralizada no Domain, capturada por um middleware global na camada de API. Isso garante que as regras de negócio controlem o fluxo de erro sem vazar detalhes de infraestrutura.
+
+### Hierarquia de Exceptions
+
+As exceções de domínio herdam de `DomainException` e são mapeadas para códigos HTTP específicos:
+
+| Exception | Status | Categoria | Uso comum |
+|---|---|---|---|
+| `DomainException` | 400 | `ErroDeValidacao` | Dados inválidos, falha em VOs, senha fraca. |
+| `DomainConflictException` | 409 | `ErroDeNegocio` | Conflito de estado (ex: e-mail já cadastrado). |
+| `DomainAuthException` | 401 | `ErroDeAutenticacao` | Credenciais inválidas, refresh token expirado. |
+| `Outras (Inesperadas)` | 500 | `ErroInterno` | Falhas de banco, rede ou bugs não mapeados. |
+
+### Middleware Global
+
+O `ErrorHandlingMiddleware` intercepta todas as exceções e retorna um JSON estruturado seguindo o padrão **RFC 7807 (Problem Details)**. Elementos-chave da resposta:
+
+- **`type`**: Categoria estável do erro para o cliente, como `ErroDeValidacao`, `ErroDeNegocio`, `ErroDeAutenticacao` ou `ErroInterno`.
+- **`title`**: Título padronizado da resposta. No middleware atual ele é fixo como `Erro ao processar requisição`.
+- **`status`**: Código HTTP correspondente ao tipo da falha.
+- **`errors`**: Lista com as mensagens específicas do erro.
+- **`traceId`**: Identificador único do OpenTelemetry para correlação com logs.
+
+**Exemplo de resposta de erro (400):**
+```json
+{
+  "type": "ErroDeValidacao",
+  "title": "Erro ao processar requisição",
+  "status": 400,
+  "errors": [
+    "O formato do e-mail é inválido."
+  ],
+  "traceId": "4bf92f3577b34da6a3ce929d0e0e4736"
+}
+```
 
 ## Observabilidade
 
@@ -266,7 +376,46 @@ A análise estática e a formatação são aplicadas em três camadas complement
 | **SonarAnalyzer.CSharp** | 10.25.0.139117 | Detecção de bugs, code smells e vulnerabilidades |
 | **Roslyn built-in** | (`AnalysisMode=All`) | Regras de performance, confiabilidade e uso da BCL |
 
-Todas as regras rodam em tempo de build — os warnings aparecem no IDE e no output do `dotnet build`. Regras que conflitam com as convenções do projeto (por exemplo: SA1309 que proíbe `_` em campos privados, sendo que o projeto usa `_camelCase`) estão suprimidas com justificativa em [`Directory.Build.props`](Directory.Build.props). `EnforceCodeStyleInBuild=true` garante que as regras do `.editorconfig` também sejam verificadas no build, não apenas no IDE.
+Todas as regras rodam em tempo de build — warnings aparecem no IDE e no output do `dotnet build`. Nenhuma tem CLI própria; o ponto de entrada é sempre:
+
+```bash
+dotnet build                             # roda todos os analyzers
+dotnet build -warnaserror                # trata warnings como erro (simula CI)
+dotnet format --verify-no-changes        # verifica regras do .editorconfig sem modificar arquivos
+```
+
+#### .editorconfig + Roslyn built-in
+
+O [`.editorconfig`](.editorconfig) define **o que** o compilador verifica. Ele atua em duas frentes:
+
+- **Estilo visual** (indentação, chaves, espaços) — lido apenas pelo IDE; sem efeito no build.
+- **Diagnósticos Roslyn** (`IDE*` e `CA*`) — como `IDE0005` (using desnecessário), `IDE0290` (primary constructors), `CA1822` (membro pode ser `static`). Esses afetam o build porque o projeto define `EnforceCodeStyleInBuild=true` e `AnalysisMode=All` em [`Directory.Build.props`](Directory.Build.props).
+
+As **convenções de naming** também vivem no `.editorconfig` (prefixo `_` em campos privados, sufixo `Async`, `I` em interfaces, etc.) e são validadas pelo Roslyn como `warning`.
+
+Regras `CA*` suprimidas com justificativa estão em [`Directory.Build.props`](Directory.Build.props) (ex: `CA2007` é desnecessário em ASP.NET Core; `CA1812` dá falso positivo com injeção de dependência).
+
+#### StyleCop.Analyzers
+
+Foca em convenções de **escrita** C#: ordem de membros, posição de `using`, modificadores. Regras com prefixo `SA*`.
+
+A configuração extra fica em [`stylecop.json`](stylecop.json) (ex: `allowUnderscorePrefix: true` para compatibilizar com `_camelCase`). Regras que conflitam com as convenções do projeto estão suprimidas com justificativa em [`Directory.Build.props`](Directory.Build.props) (ex: `SA1309` proíbe `_` em campos, `SA1200` exige usings dentro do namespace).
+
+Para filtrar só os warnings StyleCop no output:
+
+```powershell
+dotnet build 2>&1 | Select-String "SA\d{4}"
+```
+
+#### SonarAnalyzer.CSharp
+
+Detecta bugs, anti-patterns de segurança e code smells. Regras com prefixo `S*` (ex: `S2259` null dereference, `S1481` variável não usada). É distinto do SonarCloud (CI): o pacote NuGet roda **localmente no build** um subconjunto das mesmas regras, antes de chegar ao CI.
+
+Para filtrar só os warnings Sonar no output:
+
+```powershell
+dotnet build 2>&1 | Select-String "\[S\d+\]"
+```
 
 ### Formatação (CSharpier)
 

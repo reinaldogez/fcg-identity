@@ -1,0 +1,13 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Fcg.Identity.Api/Fcg.Identity.Api.csproj" />
+    <Project Path="src/Fcg.Identity.Application/Fcg.Identity.Application.csproj" />
+    <Project Path="src/Fcg.Identity.Domain/Fcg.Identity.Domain.csproj" />
+    <Project Path="src/Fcg.Identity.Infrastructure/Fcg.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Fcg.Identity.Tests.Bdd/Fcg.Identity.Tests.Bdd.csproj" />
+    <Project Path="tests/Fcg.Identity.Tests.Integration/Fcg.Identity.Tests.Integration.csproj" />
+    <Project Path="tests/Fcg.Identity.Tests.Unit/Fcg.Identity.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

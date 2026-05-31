@@ -1,0 +1,107 @@
+# =====================================================================
+# FCG GraphQL — Queries de Demonstração
+# =====================================================================
+# Endpoint: POST /graphql
+# Autenticação: Bearer JWT no header `Authorization`
+#   1. Faça login via REST (POST /api/auth/login) e copie `accessToken`.
+#   2. Em Nitro IDE (https://localhost:xxxx/graphql), aba "Headers":
+#      Authorization: Bearer <accessToken>
+# =====================================================================
+
+
+# ---------------------------------------------------------------------
+# 1) Listar admins ATIVOS, do mais novo para o mais antigo (admin only)
+# ---------------------------------------------------------------------
+query AdminsAtivosMaisRecentes {
+  usuarios(
+    first: 10
+    where: { ativo: { eq: true }, tipo: { eq: ADMINISTRADOR } }
+    order: { dataCriacao: DESC }
+  ) {
+    nodes {
+      id
+      nome
+      email
+      tipo
+      dataCriacao
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+
+
+# ---------------------------------------------------------------------
+# 2) Buscar por nome parcial e paginar pelos 5 primeiros
+# ---------------------------------------------------------------------
+query BuscaPorNomeParcial {
+  usuarios(first: 5, where: { nome: { contains: "User" } }) {
+    nodes {
+      id
+      nome
+      email
+      tipo
+      ativo
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+
+
+# ---------------------------------------------------------------------
+# 3) Mostrar somente os e-mails — destaca o "ask only what you need"
+# ---------------------------------------------------------------------
+query SomenteEmails {
+  usuarios(first: 50) {
+    nodes {
+      email
+    }
+    totalCount
+  }
+}
+
+
+# ---------------------------------------------------------------------
+# 4) Filtros combinados: usuários comuns inativos cadastrados em 2026
+# ---------------------------------------------------------------------
+query ComunsInativos2026 {
+  usuarios(
+    where: {
+      ativo: { eq: false }
+      tipo: { eq: USUARIO }
+      dataCriacao: { gte: "2026-01-01T00:00:00Z" }
+    }
+    order: { dataCriacao: ASC }
+  ) {
+    nodes {
+      id
+      nome
+      email
+      dataCriacao
+    }
+    totalCount
+  }
+}
+
+
+# ---------------------------------------------------------------------
+# 5) Obter um usuário pelo ID (OwnerOrAdmin)
+#    Substitua o GUID pelo seu id (ou de outro usuário se você for admin).
+# ---------------------------------------------------------------------
+query ObterUsuarioPorId {
+  usuario(id: "00000000-0000-0000-0000-000000000000") {
+    id
+    nome
+    email
+    tipo
+    dataCriacao
+    ativo
+  }
+}
