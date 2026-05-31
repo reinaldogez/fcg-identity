@@ -1,0 +1,116 @@
+using Fcg.Identity.Application.DTOs;
+using Fcg.Identity.Application.UseCases;
+using Fcg.Identity.Domain.Entities;
+using Fcg.Identity.Domain.Enums;
+using Fcg.Identity.Domain.Exceptions;
+using Fcg.Identity.Domain.Interfaces;
+using Fcg.Identity.Domain.ValueObjects;
+using FluentAssertions;
+using Moq;
+
+namespace Fcg.Identity.Tests.Unit.Application.UseCases;
+
+public class AlterarTipoUsuarioUseCaseTests
+{
+    private static readonly Guid _solicitanteAdminId = Guid.NewGuid();
+
+    private readonly Mock<IUsuarioRepository> _repositorioMock = new();
+    private readonly Mock<IUnitOfWork> _unitOfWorkMock = new();
+    private readonly AlterarTipoUsuarioUseCase _useCase;
+
+    public AlterarTipoUsuarioUseCaseTests() =>
+        _useCase = new AlterarTipoUsuarioUseCase(_repositorioMock.Object, _unitOfWorkMock.Object);
+
+    [Fact]
+    public async Task DeveAlterarTipoParaAdministrador()
+    {
+        Usuario usuario = CriarUsuario();
+        _repositorioMock
+            .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(
+            usuario.Id,
+            _solicitanteAdminId,
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
+
+        resultado.Should().NotBeNull();
+        resultado!.Tipo.Should().Be(TipoUsuario.Administrador.ToString());
+    }
+
+    [Fact]
+    public async Task DeveAlterarTipoParaUsuario()
+    {
+        Usuario usuario = CriarUsuario(TipoUsuario.Administrador);
+        _repositorioMock
+            .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(
+            usuario.Id,
+            _solicitanteAdminId,
+            new AlterarTipoRequest(TipoUsuario.Usuario)
+        );
+
+        resultado!.Tipo.Should().Be(TipoUsuario.Usuario.ToString());
+    }
+
+    [Fact]
+    public async Task DeveRetornarNullQuandoUsuarioNaoEncontrado()
+    {
+        _repositorioMock
+            .Setup(r => r.ObterPorIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Usuario?)null);
+
+        UsuarioResponse? resultado = await _useCase.ExecutarAsync(
+            Guid.NewGuid(),
+            _solicitanteAdminId,
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
+
+        resultado.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeveChamarSalvarAlteracoes()
+    {
+        Usuario usuario = CriarUsuario();
+        _repositorioMock
+            .Setup(r => r.ObterPorIdAsync(usuario.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(usuario);
+
+        await _useCase.ExecutarAsync(
+            usuario.Id,
+            _solicitanteAdminId,
+            new AlterarTipoRequest(TipoUsuario.Administrador)
+        );
+
+        _unitOfWorkMock.Verify(
+            u => u.SalvarAlteracoesAsync(It.IsAny<CancellationToken>()),
+            Times.Once
+        );
+    }
+
+    [Fact]
+    public async Task DeveLancarDomainExceptionQuandoAdminTentaRebaixarASiMesmo()
+    {
+        Usuario admin = CriarUsuario(TipoUsuario.Administrador);
+        _repositorioMock
+            .Setup(r => r.ObterPorIdAsync(admin.Id, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(admin);
+
+        Func<Task> acao = () =>
+            _useCase.ExecutarAsync(admin.Id, admin.Id, new AlterarTipoRequest(TipoUsuario.Usuario));
+
+        await acao.Should().ThrowAsync<DomainException>().WithMessage("*rebaixar a si mesmo*");
+    }
+
+    private static Usuario CriarUsuario(TipoUsuario tipo = TipoUsuario.Usuario) =>
+        Usuario.Criar(
+            "Nome",
+            Email.Criar("teste@email.com"),
+            SenhaHash.Reconstituir("$2a$11$hashFalso"),
+            tipo
+        );
+}

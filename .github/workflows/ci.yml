@@ -27,7 +27,7 @@ jobs:
 
       - name: Testes Unitários
         run: |
-          dotnet test tests/FCG.Tests.Unit/ \
+          dotnet test tests/Fcg.Identity.Tests.Unit/ \
             --no-build \
             --configuration Release \
             --verbosity normal \
@@ -61,7 +61,7 @@ jobs:
 
       - name: Testes de Integração
         run: |
-          dotnet test tests/FCG.Tests.Integration/ \
+          dotnet test tests/Fcg.Identity.Tests.Integration/ \
             --no-build \
             --configuration Release \
             --verbosity normal \
@@ -95,7 +95,7 @@ jobs:
 
       - name: Testes BDD
         run: |
-          dotnet test tests/FCG.Tests.Bdd/ \
+          dotnet test tests/Fcg.Identity.Tests.Bdd/ \
             --no-build \
             --configuration Release \
             --verbosity normal \

@@ -32,6 +32,10 @@ dotnet_diagnostic.CA2000.severity = warning
 dotnet_diagnostic.CA1822.severity = warning
 # Remove usings desnecessários
 dotnet_diagnostic.IDE0005.severity = warning
+# Templates de log devem usar PascalCase (consistência com Serilog estruturado)
+dotnet_diagnostic.CA1727.severity = warning
+# ConfigureAwait desnecessário em ASP.NET Core (não há sync context)
+dotnet_diagnostic.CA2007.severity = none
 
 # ============================================================================
 # C# files
@@ -42,7 +46,8 @@ dotnet_diagnostic.IDE0005.severity = warning
 csharp_using_directive_placement = outside_namespace:suggestion
 
 # --- Namespace declarations -------------------------------------------------
-csharp_style_namespace_declarations = file_scoped:suggestion
+csharp_style_namespace_declarations = file_scoped
+dotnet_diagnostic.IDE0161.severity = warning
 
 # --- Braces / New lines (Allman style) -------------------------------------
 csharp_new_line_before_open_brace = all
@@ -52,6 +57,8 @@ csharp_new_line_before_finally = true
 csharp_new_line_before_members_in_object_initializers = true
 csharp_new_line_before_members_in_anonymous_types = true
 csharp_new_line_between_query_expression_clauses = true
+# Allman / quebras de linha — força style rules de formatação
+dotnet_diagnostic.IDE0055.severity = warning
 
 # --- Indentation ------------------------------------------------------------
 csharp_indent_case_contents = true
@@ -72,74 +79,123 @@ csharp_preserve_single_line_blocks = true
 
 # --- var preferences --------------------------------------------------------
 # Tipos primitivos (int, string, bool…) sempre explícitos — var esconde informação relevante
-csharp_style_var_for_built_in_types = false:warning
+csharp_style_var_for_built_in_types = false
 # var permitido quando o tipo já aparece na expressão: new Jogo(), (Jogo)obj, etc.
-csharp_style_var_when_type_is_apparent = true:warning
+csharp_style_var_when_type_is_apparent = true
 # Em qualquer outro contexto, tipo explícito obrigatório para preservar legibilidade
-csharp_style_var_elsewhere = false:warning
+csharp_style_var_elsewhere = false
+dotnet_diagnostic.IDE0007.severity = warning
+dotnet_diagnostic.IDE0008.severity = warning
 
 # --- this. qualification (do not use) ---------------------------------------
-dotnet_style_qualification_for_field = false:suggestion
-dotnet_style_qualification_for_property = false:suggestion
-dotnet_style_qualification_for_method = false:suggestion
-dotnet_style_qualification_for_event = false:suggestion
+dotnet_style_qualification_for_field = false
+dotnet_style_qualification_for_property = false
+dotnet_style_qualification_for_method = false
+dotnet_style_qualification_for_event = false
+dotnet_diagnostic.IDE0003.severity = suggestion
 
 # --- Access modifiers (explicit for non-interface members) -------------------------------------
-dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
-csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:suggestion
+dotnet_style_require_accessibility_modifiers = for_non_interface_members
+dotnet_diagnostic.IDE0040.severity = suggestion
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async
+dotnet_diagnostic.IDE0036.severity = suggestion
 
 # --- Expression body members ------------------------------------------------
 # Só transforma em => se o conteúdo couber em uma única linha
-csharp_style_expression_bodied_methods = when_on_single_line:warning
-csharp_style_expression_bodied_constructors = when_on_single_line:warning
-csharp_style_expression_bodied_operators = when_on_single_line:warning
-csharp_style_expression_bodied_properties = when_on_single_line:warning
-csharp_style_expression_bodied_indexers = when_on_single_line:warning
-csharp_style_expression_bodied_accessors = when_on_single_line:warning
-csharp_style_expression_bodied_lambdas = true:silent
-csharp_style_expression_bodied_local_functions = when_on_single_line:warning
+csharp_style_expression_bodied_methods = when_on_single_line
+csharp_style_expression_bodied_constructors = when_on_single_line
+csharp_style_expression_bodied_operators = when_on_single_line
+csharp_style_expression_bodied_properties = when_on_single_line
+csharp_style_expression_bodied_indexers = when_on_single_line
+csharp_style_expression_bodied_accessors = when_on_single_line
+csharp_style_expression_bodied_lambdas = true
+csharp_style_expression_bodied_local_functions = when_on_single_line
+dotnet_diagnostic.IDE0021.severity = warning
+dotnet_diagnostic.IDE0022.severity = warning
+dotnet_diagnostic.IDE0023.severity = warning
+dotnet_diagnostic.IDE0024.severity = warning
+dotnet_diagnostic.IDE0025.severity = warning
+dotnet_diagnostic.IDE0026.severity = warning
+dotnet_diagnostic.IDE0027.severity = warning
+dotnet_diagnostic.IDE0053.severity = silent
+dotnet_diagnostic.IDE0061.severity = warning
 
 # --- Pattern matching -------------------------------------------------------
-csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
-csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
-csharp_style_prefer_not_pattern = true:suggestion
-csharp_style_prefer_pattern_matching = true:silent
+csharp_style_pattern_matching_over_is_with_cast_check = true
+csharp_style_pattern_matching_over_as_with_null_check = true
+csharp_style_prefer_not_pattern = true
+csharp_style_prefer_pattern_matching = true
+dotnet_diagnostic.IDE0019.severity = suggestion
+dotnet_diagnostic.IDE0020.severity = suggestion
+dotnet_diagnostic.IDE0078.severity = suggestion
+dotnet_diagnostic.IDE0083.severity = suggestion
 
 # --- Null checking ----------------------------------------------------------
-csharp_style_conditional_delegate_call = true:suggestion
-csharp_style_throw_expression = true:suggestion
-csharp_style_prefer_null_check_over_type_check = true:suggestion
+csharp_style_conditional_delegate_call = true
+csharp_style_throw_expression = true
+csharp_style_prefer_null_check_over_type_check = true
+dotnet_diagnostic.IDE1005.severity = suggestion
+dotnet_diagnostic.IDE0016.severity = suggestion
+dotnet_diagnostic.IDE0150.severity = suggestion
 
 # --- Code style preferences -------------------------------------------------
-dotnet_style_object_initializer = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
-dotnet_style_prefer_auto_properties = true:suggestion
-dotnet_style_prefer_simplified_boolean_expressions = true:suggestion
-dotnet_style_prefer_conditional_expression_over_assignment = true:silent
-dotnet_style_prefer_conditional_expression_over_return = true:silent
-dotnet_style_prefer_inferred_tuple_names = true:suggestion
-dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
-dotnet_style_prefer_compound_assignment = true:suggestion
-dotnet_style_prefer_simplified_interpolation = true:suggestion
-csharp_style_prefer_simple_using_statement = true:suggestion
-csharp_style_prefer_index_operator = true:suggestion
-csharp_style_prefer_range_operator = true:suggestion
-csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
-csharp_style_inlined_variable_declaration = true:suggestion
-csharp_style_deconstructed_variable_declaration = true:suggestion
-csharp_style_prefer_local_over_anonymous_function = true:suggestion
+dotnet_style_object_initializer = true
+dotnet_style_collection_initializer = true
+dotnet_style_prefer_auto_properties = true
+dotnet_style_prefer_simplified_boolean_expressions = true
+dotnet_style_prefer_conditional_expression_over_assignment = true
+dotnet_style_prefer_conditional_expression_over_return = true
+dotnet_style_prefer_inferred_tuple_names = true
+dotnet_style_prefer_inferred_anonymous_type_member_names = true
+dotnet_style_prefer_compound_assignment = true
+dotnet_style_prefer_simplified_interpolation = true
+csharp_style_prefer_simple_using_statement = true
+csharp_style_prefer_index_operator = true
+csharp_style_prefer_range_operator = true
+csharp_style_implicit_object_creation_when_type_is_apparent = true
+csharp_style_inlined_variable_declaration = true
+csharp_style_deconstructed_variable_declaration = true
+csharp_style_prefer_local_over_anonymous_function = true
+dotnet_diagnostic.IDE0017.severity = suggestion
+dotnet_diagnostic.IDE0028.severity = suggestion
+dotnet_diagnostic.IDE0032.severity = suggestion
+dotnet_diagnostic.IDE0075.severity = suggestion
+dotnet_diagnostic.IDE0045.severity = silent
+dotnet_diagnostic.IDE0046.severity = silent
+dotnet_diagnostic.IDE0037.severity = suggestion
+dotnet_diagnostic.IDE0054.severity = suggestion
+dotnet_diagnostic.IDE0071.severity = suggestion
+dotnet_diagnostic.IDE0063.severity = suggestion
+dotnet_diagnostic.IDE0056.severity = suggestion
+dotnet_diagnostic.IDE0057.severity = suggestion
+dotnet_diagnostic.IDE0090.severity = suggestion
+dotnet_diagnostic.IDE0018.severity = suggestion
+dotnet_diagnostic.IDE0042.severity = suggestion
+dotnet_diagnostic.IDE0039.severity = suggestion
 
 # --- Modern C# features (.NET 10 / C# 14) ------------------------------------
-csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_switch_expression = true
+dotnet_diagnostic.IDE0066.severity = suggestion
 # Primary Constructors: Reduz boilerplate de injeção de dependência
-csharp_style_prefer_primary_constructors = true:warning
+csharp_style_prefer_primary_constructors = true
 dotnet_diagnostic.IDE0290.severity = warning
 
-csharp_prefer_static_local_function = true:suggestion
-csharp_style_prefer_collection_expression = true:suggestion
+csharp_prefer_static_local_function = true
+dotnet_diagnostic.IDE0062.severity = suggestion
+csharp_style_prefer_collection_expression = true
+dotnet_diagnostic.IDE0300.severity = suggestion
+
+# nameof de tipo genérico sem argumentos: nameof(List<>) em vez de nameof(List<int>)
+csharp_style_prefer_unbound_generic_type_in_nameof = true
+dotnet_diagnostic.IDE0305.severity = suggestion
+
+# Troca de variáveis via desconstrução de tupla: (a, b) = (b, a)
+csharp_style_prefer_tuple_swap = true
+dotnet_diagnostic.IDE0180.severity = suggestion
 
 # --- String preferences -----------------------------------------------------
-dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true
+dotnet_diagnostic.IDE0041.severity = suggestion
 
 # ============================================================================
 # Naming conventions
@@ -228,19 +284,19 @@ dotnet_diagnostic.CA1308.severity = none
 # ============================================================================
 # Código gerado pelo EF Core (migrations)
 # ============================================================================
-[src/FCG.Infrastructure/Migrations/**.cs]
+[src/Fcg.Identity.Infrastructure/Migrations/**.cs]
 generated_code = true
 
 # ============================================================================
 # Código gerado pelo Reqnroll (features BDD)
 # ============================================================================
-[tests/FCG.Tests.Bdd/Features/**.feature.cs]
+[tests/Fcg.Identity.Tests.Bdd/Features/**.feature.cs]
 generated_code = true
 
 # ============================================================================
 # Middlewares de erro — catch geral de Exception é intencional
 # ============================================================================
-[src/FCG.API/Middlewares/**.cs]
+[src/Fcg.Identity.Api/Middlewares/**.cs]
 # Catch de Exception em middleware global é o ponto do middleware
 dotnet_diagnostic.CA1031.severity = none
 # Logs com argumentos triviais (Request.Path) — avaliação sem custo
@@ -249,14 +305,14 @@ dotnet_diagnostic.CA1873.severity = none
 # ============================================================================
 # Handlers de autorização GraphQL — fallback para argumento inválido
 # ============================================================================
-[src/FCG.API/GraphQL/Authorization/**.cs]
+[src/Fcg.Identity.Api/GraphQL/Authorization/**.cs]
 # Catch sem filtro para tratar argumento ausente ou de tipo incompatível como null
 dotnet_diagnostic.CA1031.severity = none
 
 # ============================================================================
 # Seed de desenvolvimento — não é código de produção crítico
 # ============================================================================
-[src/FCG.Infrastructure/Services/DevSeedService.cs]
+[src/Fcg.Identity.Infrastructure/Services/DevSeedService.cs]
 # Random com seed fixo é proposital (seed determinístico, não-criptográfico)
 dotnet_diagnostic.CA5394.severity = none
 # Logs de diagnóstico com argumentos triviais
@@ -265,6 +321,6 @@ dotnet_diagnostic.CA1873.severity = none
 # ============================================================================
 # Controllers REST — S6960 (Sonar) tem falso positivo com agregados CRUD
 # ============================================================================
-[src/FCG.API/Controllers/**.cs]
+[src/Fcg.Identity.Api/Controllers/**.cs]
 # Controllers REST de um agregado naturalmente têm múltiplos endpoints
 dotnet_diagnostic.S6960.severity = none
