@@ -8,13 +8,13 @@ namespace Fcg.Identity.Infrastructure.Dapper;
 
 // Extrai a connection string a partir do DbContext do EF.
 // Manter uma única fonte de verdade evita drift entre EF e Dapper, e em testes
-// (FcgApiFactory) o DbContext já é reconfigurado para o Testcontainer — Dapper acompanha automaticamente.
-public class SqlConnectionFactory(FcgDbContext contexto) : IDbConnectionFactory
+// (IdentityApiFactory) o DbContext já é reconfigurado para o Testcontainer — Dapper acompanha automaticamente.
+public class SqlConnectionFactory(IdentityDbContext contexto) : IDbConnectionFactory
 {
     private readonly string _connectionString =
         contexto.Database.GetConnectionString()
         ?? throw new InvalidOperationException(
-            "Não foi possível resolver a connection string a partir do FcgDbContext."
+            "Não foi possível resolver a connection string a partir do IdentityDbContext."
         );
 
     public IDbConnection CreateOpenConnection()

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fcg.Identity.Infrastructure.Persistence.Repositories;
 
-public class RefreshTokenRepository(FcgDbContext contexto) : IRefreshTokenRepository
+public class RefreshTokenRepository(IdentityDbContext contexto) : IRefreshTokenRepository
 {
     public async Task<RefreshToken?> ObterPorHashAsync(
         string tokenHash,

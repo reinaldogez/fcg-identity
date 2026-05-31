@@ -7,8 +7,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class UsuariosGraphQLTests(FcgApiFactory factory)
-    : IClassFixture<FcgApiFactory>,
+public class UsuariosGraphQLTests(IdentityApiFactory factory)
+    : IClassFixture<IdentityApiFactory>,
         IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
@@ -16,7 +16,7 @@ public class UsuariosGraphQLTests(FcgApiFactory factory)
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly FcgApiFactory _factory = factory;
+    private readonly IdentityApiFactory _factory = factory;
 
     public Task InitializeAsync() => _factory.ResetarBancoAsync();
 

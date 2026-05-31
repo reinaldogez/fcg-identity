@@ -13,17 +13,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class AdminRelatoriosTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
+public class AdminRelatoriosTests : IClassFixture<IdentityApiFactory>, IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly FcgApiFactory _factory;
+    private readonly IdentityApiFactory _factory;
     private readonly HttpClient _client;
 
-    public AdminRelatoriosTests(FcgApiFactory factory)
+    public AdminRelatoriosTests(IdentityApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient(
@@ -91,7 +91,7 @@ public class AdminRelatoriosTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     private async Task SemearUsuariosAsync()
     {
         using IServiceScope scope = _factory.Services.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         Application.Interfaces.ISenhaService senhaService =
             scope.ServiceProvider.GetRequiredService<Application.Interfaces.ISenhaService>();
 

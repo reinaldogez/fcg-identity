@@ -144,7 +144,7 @@ docker compose up -d
 
 **Desenvolvimento local (User Secrets):**
 ```bash
-dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=FcgDb;User Id=sa;Password=<SA_PASSWORD>;TrustServerCertificate=True;" --project src/FCG.API
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=localhost,1433;Database=identity;User Id=sa;Password=<SA_PASSWORD>;TrustServerCertificate=True;" --project src/FCG.API
 dotnet user-secrets set "AdminSeed:DefaultPassword" "<SenhaDoAdmin>" --project src/FCG.API
 dotnet user-secrets set "Jwt:SigningKey" "<chave-aleatoria-com-mais-de-32-caracteres>" --project src/FCG.API
 ```

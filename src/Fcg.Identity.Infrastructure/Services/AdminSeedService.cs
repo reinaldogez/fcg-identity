@@ -33,7 +33,7 @@ public class AdminSeedService(
         }
 
         using IServiceScope scope = scopeFactory.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         ISenhaService senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
 
         var email = Email.Criar(AdminEmail);

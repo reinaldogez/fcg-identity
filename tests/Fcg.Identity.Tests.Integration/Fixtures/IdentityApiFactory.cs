@@ -9,6 +9,7 @@ using Fcg.Identity.Infrastructure.Persistence;
 using Fcg.Identity.Infrastructure.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,7 @@ using Testcontainers.MsSql;
 
 namespace Fcg.Identity.Tests.Integration.Fixtures;
 
-public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
+public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     public const string TestSigningKey = "chave-de-teste-com-tamanho-minimo-de-32-caracteres-ok";
     public const string TestIssuer = "FcgApi.Tests";
@@ -27,7 +28,7 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         "mcr.microsoft.com/mssql/server:2022-latest"
     ).Build();
 
-    static FcgApiFactory()
+    static IdentityApiFactory()
     {
         Environment.SetEnvironmentVariable("Jwt__Issuer", TestIssuer);
         Environment.SetEnvironmentVariable("Jwt__Audience", TestAudience);
@@ -41,7 +42,7 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await _sqlContainer.StartAsync();
 
         using IServiceScope scope = Services.CreateScope();
-        FcgDbContext context = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         await context.Database.MigrateAsync();
     }
 
@@ -59,7 +60,7 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     )
     {
         using IServiceScope scope = Services.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         ISenhaService senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
         IJwtTokenService jwtTokenService =
             scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
@@ -104,12 +105,12 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         builder.ConfigureServices(services =>
         {
             ServiceDescriptor dbContextDescriptor = services.Single(d =>
-                d.ServiceType == typeof(DbContextOptions<FcgDbContext>)
+                d.ServiceType == typeof(DbContextOptions<IdentityDbContext>)
             );
             services.Remove(dbContextDescriptor);
 
-            services.AddDbContext<FcgDbContext>(options =>
-                options.UseSqlServer(_sqlContainer.GetConnectionString())
+            services.AddDbContext<IdentityDbContext>(options =>
+                options.UseSqlServer(IdentityConnectionString())
             );
 
             ServiceDescriptor seedDescriptor = services.Single(d =>
@@ -119,4 +120,13 @@ public class FcgApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
             services.Remove(seedDescriptor);
         });
     }
+
+    // O módulo Testcontainers.MsSql não cria banco próprio: GetConnectionString() aponta
+    // para o catálogo `master`. Reescrevemos o Initial Catalog para `identity` (naming §3)
+    // — o MigrateAsync cria e migra esse banco no container.
+    private string IdentityConnectionString() =>
+        new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString())
+        {
+            InitialCatalog = "identity",
+        }.ConnectionString;
 }

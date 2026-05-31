@@ -161,14 +161,14 @@ builder.Services.AddAuthorization(options =>
 string connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
-builder.Services.AddDbContext<FcgDbContext>(options => options.UseSqlServer(connectionString));
+builder.Services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ISenhaService, SenhaService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IUsuarioDomainService, UsuarioDomainService>();
-builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<FcgDbContext>());
+builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
 builder.Services.AddScoped<IUsuarioReadRepository, UsuarioReadRepository>();
 builder.Services.AddScoped<CadastrarUsuarioUseCase>();

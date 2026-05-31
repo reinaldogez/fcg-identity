@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fcg.Identity.Infrastructure.Persistence.Repositories;
 
-public class UsuarioRepository(FcgDbContext contexto) : IUsuarioRepository
+public class UsuarioRepository(IdentityDbContext contexto) : IUsuarioRepository
 {
     public async Task<Usuario?> ObterPorEmailAsync(
         Email email,
