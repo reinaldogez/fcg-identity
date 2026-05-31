@@ -29,7 +29,7 @@ public class DevSeedService(
         }
 
         using IServiceScope scope = scopeFactory.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         ISenhaService senhaService = scope.ServiceProvider.GetRequiredService<ISenhaService>();
 
         int totalAtual = await contexto.Usuarios.CountAsync(cancellationToken);

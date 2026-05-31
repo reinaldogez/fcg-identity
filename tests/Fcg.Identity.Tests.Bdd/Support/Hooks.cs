@@ -10,12 +10,12 @@ namespace Fcg.Identity.Tests.Bdd.Support;
 [Binding]
 public class Hooks(IObjectContainer objectContainer)
 {
-    private static FcgApiFactory _factory = null!;
+    private static IdentityApiFactory _factory = null!;
 
     [BeforeTestRun]
     public static async Task BeforeTestRun()
     {
-        _factory = new FcgApiFactory();
+        _factory = new IdentityApiFactory();
         await ((IAsyncLifetime)_factory).InitializeAsync();
     }
 

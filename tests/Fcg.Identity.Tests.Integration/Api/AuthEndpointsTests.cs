@@ -18,7 +18,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
+public class AuthEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLifetime
 {
     private const string EmailUsuario = "login@fcg.com";
     private const string SenhaUsuario = "Senha@123";
@@ -29,10 +29,10 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly FcgApiFactory _factory;
+    private readonly IdentityApiFactory _factory;
     private readonly HttpClient _client;
 
-    public AuthEndpointsTests(FcgApiFactory factory)
+    public AuthEndpointsTests(IdentityApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient(
@@ -158,13 +158,13 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         var parametros = new TokenValidationParameters
         {
             ValidateIssuer = true,
-            ValidIssuer = FcgApiFactory.TestIssuer,
+            ValidIssuer = IdentityApiFactory.TestIssuer,
             ValidateAudience = true,
-            ValidAudience = FcgApiFactory.TestAudience,
+            ValidAudience = IdentityApiFactory.TestAudience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(FcgApiFactory.TestSigningKey)
+                Encoding.UTF8.GetBytes(IdentityApiFactory.TestSigningKey)
             ),
             ClockSkew = TimeSpan.FromSeconds(5),
         };
@@ -358,7 +358,7 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
         LoginResponse login = await LoginAsync();
 
         using IServiceScope scope = _factory.Services.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         IJwtTokenService jwt = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
 
         string hashEsperado = jwt.CalcularHashRefreshToken(login.RefreshToken!);
@@ -401,7 +401,7 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     private async Task DesativarUsuarioNoBancoAsync(string email)
     {
         using IServiceScope scope = _factory.Services.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         var emailVo = Email.Criar(email);
         Usuario usuario = await contexto.Usuarios.SingleAsync(u => u.Email == emailVo);
         usuario.Desativar();
@@ -411,7 +411,7 @@ public class AuthEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
     private async Task ExpirarRefreshTokenNoBancoAsync(string plaintext)
     {
         using IServiceScope scope = _factory.Services.CreateScope();
-        FcgDbContext contexto = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contexto = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         IJwtTokenService jwt = scope.ServiceProvider.GetRequiredService<IJwtTokenService>();
         string hash = jwt.CalcularHashRefreshToken(plaintext);
         DateTime passado = DateTime.UtcNow.AddDays(-1);

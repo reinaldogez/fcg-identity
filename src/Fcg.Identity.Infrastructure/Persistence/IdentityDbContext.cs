@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fcg.Identity.Infrastructure.Persistence;
 
-public class FcgDbContext(DbContextOptions<FcgDbContext> options) : DbContext(options), IUnitOfWork
+public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : DbContext(options), IUnitOfWork
 {
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -14,7 +14,7 @@ public class FcgDbContext(DbContextOptions<FcgDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(FcgDbContext).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
         base.OnModelCreating(modelBuilder);
     }
 }

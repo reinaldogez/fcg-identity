@@ -12,17 +12,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetime
+public class UsuarioEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
     };
 
-    private readonly FcgApiFactory _factory;
+    private readonly IdentityApiFactory _factory;
     private readonly HttpClient _client;
 
-    public UsuarioEndpointsTests(FcgApiFactory factory)
+    public UsuarioEndpointsTests(IdentityApiFactory factory)
     {
         _factory = factory;
         _client = factory.CreateClient(
@@ -62,7 +62,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
         body.Ativo.Should().BeTrue();
 
         using IServiceScope scope = _factory.Services.CreateScope();
-        FcgDbContext context = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         int totalNoBanco = await context.Usuarios.CountAsync();
         totalNoBanco.Should().Be(1);
     }
@@ -465,7 +465,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
         HttpClient client = _factory.CreateAuthenticatedClient(token);
 
         using IServiceScope scopeAntes = _factory.Services.CreateScope();
-        FcgDbContext contextAntes = scopeAntes.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contextAntes = scopeAntes.ServiceProvider.GetRequiredService<IdentityDbContext>();
         string hashAntes = (await contextAntes.Usuarios.FindAsync(id))!.SenhaHash.Valor;
 
         await client.PostAsJsonAsync(
@@ -474,7 +474,7 @@ public class UsuarioEndpointsTests : IClassFixture<FcgApiFactory>, IAsyncLifetim
         );
 
         using IServiceScope scopeDepois = _factory.Services.CreateScope();
-        FcgDbContext contextDepois = scopeDepois.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext contextDepois = scopeDepois.ServiceProvider.GetRequiredService<IdentityDbContext>();
         string hashDepois = (await contextDepois.Usuarios.FindAsync(id))!.SenhaHash.Valor;
 
         hashDepois.Should().NotBe(hashAntes);

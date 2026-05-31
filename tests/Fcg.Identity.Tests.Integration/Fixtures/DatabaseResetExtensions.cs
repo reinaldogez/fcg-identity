@@ -6,10 +6,10 @@ namespace Fcg.Identity.Tests.Integration.Fixtures;
 
 public static class DatabaseResetExtensions
 {
-    public static async Task ResetarBancoAsync(this FcgApiFactory factory)
+    public static async Task ResetarBancoAsync(this IdentityApiFactory factory)
     {
         using IServiceScope scope = factory.Services.CreateScope();
-        FcgDbContext context = scope.ServiceProvider.GetRequiredService<FcgDbContext>();
+        IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
         await context.Database.ExecuteSqlRawAsync("DELETE FROM RefreshTokens");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM Usuarios");
     }

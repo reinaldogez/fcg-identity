@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Fcg.Identity.Infrastructure.Migrations
 {
-    [DbContext(typeof(FcgDbContext))]
+    [DbContext(typeof(IdentityDbContext))]
     [Migration("20260425034325_CollationEmailUsuario")]
     partial class CollationEmailUsuario
     {
