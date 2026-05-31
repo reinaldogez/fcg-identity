@@ -14,6 +14,7 @@
 MVP da plataforma FIAP Cloud Games. API em .NET 10 desenvolvida como Tech Challenge da Pós-Graduação em Arquitetura de Sistemas .NET (FIAP), utilizando DDD, EF Core e Autenticação JWT.
 
 ## Table of Contents
+- [fcg-identity](#fcg-identity)
 - [FIAP Cloud Games MVP](#fiap-cloud-games-mvp)
   - [Table of Contents](#table-of-contents)
   - [Sobre o projeto](#sobre-o-projeto)
@@ -203,7 +204,7 @@ Os testes de integração e BDD usam Testcontainers, que sobe um SQL Server real
 
 ### Secrets no repositório
 
-O CI **não depende de nenhum secret do GitHub** para rodar os testes. A `FcgApiFactory` define todas as configurações de JWT necessárias via variáveis de ambiente no construtor estático (valores hardcoded de teste), e o `AdminSeedService` é removido do DI durante os testes — portanto `AdminSeed:DefaultPassword` nunca é consumido.
+O CI **não depende de nenhum secret do GitHub** para rodar os testes. A `IdentityApiFactory` define todas as configurações de JWT necessárias via variáveis de ambiente no construtor estático (valores hardcoded de teste), e o `AdminSeedService` é removido do DI durante os testes — portanto `AdminSeed:DefaultPassword` nunca é consumido.
 
 > Para um ambiente de produção real, configure `ConnectionStrings__DefaultConnection`, `Jwt__SigningKey`, `Jwt__Issuer`, `Jwt__Audience` e `AdminSeed__DefaultPassword` como secrets ou variáveis de ambiente no servidor de deploy.
 
@@ -298,7 +299,7 @@ Os limites são lidos da seção `RateLimit` do `appsettings.json`:
 }
 ```
 
-Ao exceder o limite a API retorna **429 Too Many Requests**. Em testes de integração o `PermitLimit` é sobrescrito para `int.MaxValue` via `FcgApiFactory`, evitando flakiness por janela compartilhada entre cenários. No pipeline de middlewares, `UseAuthentication()` vem **antes** de `UseRateLimiter()` para garantir que `httpContext.User` esteja populado quando a policy resolve a chave de particionamento.
+Ao exceder o limite a API retorna **429 Too Many Requests**. Em testes de integração o `PermitLimit` é sobrescrito para `int.MaxValue` via `IdentityApiFactory`, evitando flakiness por janela compartilhada entre cenários. No pipeline de middlewares, `UseAuthentication()` vem **antes** de `UseRateLimiter()` para garantir que `httpContext.User` esteja populado quando a policy resolve a chave de particionamento.
 
 ### Smoke test pelo Scalar ou Swagger
 
