@@ -5,7 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Fcg.Identity.Infrastructure.Persistence;
 
-public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : DbContext(options), IUnitOfWork
+public class IdentityDbContext(DbContextOptions<IdentityDbContext> options)
+    : DbContext(options),
+        IUnitOfWork
 {
     public DbSet<Usuario> Usuarios => Set<Usuario>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
@@ -17,8 +19,8 @@ public class IdentityDbContext(DbContextOptions<IdentityDbContext> options) : Db
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(IdentityDbContext).Assembly);
 
-        modelBuilder.AddTransactionalOutboxEntities(); // OutboxMessage + OutboxState (plan §3.3)
-        modelBuilder.AddInboxStateEntity(); // InboxState — ociosa, padronização (service-spec §4.2)
+        modelBuilder.AddTransactionalOutboxEntities(); // OutboxMessage + OutboxState
+        modelBuilder.AddInboxStateEntity(); // InboxState — fica ociosa: este serviço só publica
 
         base.OnModelCreating(modelBuilder);
     }
