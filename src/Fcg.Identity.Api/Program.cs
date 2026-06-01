@@ -15,6 +15,7 @@ using Fcg.Identity.Domain.Interfaces;
 using Fcg.Identity.Domain.Services;
 using Fcg.Identity.Infrastructure.Dapper;
 using Fcg.Identity.Infrastructure.Dapper.ReadRepositories;
+using Fcg.Identity.Infrastructure.Messaging;
 using Fcg.Identity.Infrastructure.Persistence;
 using Fcg.Identity.Infrastructure.Persistence.Repositories;
 using Fcg.Identity.Infrastructure.Services;
@@ -162,6 +163,8 @@ string connectionString =
     builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
 builder.Services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(connectionString));
+
+builder.Services.AddIdentityMessaging(builder.Configuration);
 
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();

@@ -15,6 +15,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Testcontainers.MsSql;
+using Testcontainers.RabbitMq;
 
 namespace Fcg.Identity.Tests.Integration.Fixtures;
 
@@ -28,6 +29,10 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         "mcr.microsoft.com/mssql/server:2022-latest"
     ).Build();
 
+    private readonly RabbitMqContainer _rabbitMqContainer = new RabbitMqBuilder(
+        "rabbitmq:4-management"
+    ).Build();
+
     static IdentityApiFactory()
     {
         Environment.SetEnvironmentVariable("Jwt__Issuer", TestIssuer);
@@ -39,7 +44,16 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        await _sqlContainer.StartAsync();
+        await Task.WhenAll(_sqlContainer.StartAsync(), _rabbitMqContainer.StartAsync());
+
+        // O bus lê o host RabbitMQ de RabbitMq:Uri. A porta do Testcontainer é dinâmica, então só
+        // conhecemos a URI após StartAsync. Setamos a env var ANTES do primeiro acesso a `Services`
+        // (o MigrateAsync abaixo força o CreateBuilder), mantendo o padrão de configuração-antes-do-
+        // boot já usado para o Jwt.
+        Environment.SetEnvironmentVariable(
+            "RabbitMq__Uri",
+            _rabbitMqContainer.GetConnectionString()
+        );
 
         using IServiceScope scope = Services.CreateScope();
         IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -48,6 +62,7 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     public new async Task DisposeAsync()
     {
+        await _rabbitMqContainer.DisposeAsync();
         await _sqlContainer.DisposeAsync();
         await base.DisposeAsync();
     }
@@ -122,7 +137,7 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     }
 
     // O módulo Testcontainers.MsSql não cria banco próprio: GetConnectionString() aponta
-    // para o catálogo `master`. Reescrevemos o Initial Catalog para `identity` (naming §3)
+    // para o catálogo `master`. Reescrevemos o Initial Catalog para `identity`
     // — o MigrateAsync cria e migra esse banco no container.
     private string IdentityConnectionString() =>
         new SqlConnectionStringBuilder(_sqlContainer.GetConnectionString())
