@@ -60,6 +60,11 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         await context.Database.MigrateAsync();
     }
 
+    // Derruba o broker para simular o RabbitMQ fora do ar depois que a API já subiu. Use só em
+    // classes cujos testes não dependem do broker (ex.: health checks) — a instância da factory é
+    // exclusiva da classe de teste, então parar o broker aqui não afeta as demais.
+    public Task PararBrokerAsync() => _rabbitMqContainer.StopAsync();
+
     public new async Task DisposeAsync()
     {
         await _rabbitMqContainer.DisposeAsync();

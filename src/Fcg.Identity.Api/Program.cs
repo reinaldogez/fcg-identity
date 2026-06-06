@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.RateLimiting;
 using Fcg.Identity.Api.Authorization;
 using Fcg.Identity.Api.GraphQL;
+using Fcg.Identity.Api.Health;
 using Fcg.Identity.Api.Logging;
 using Fcg.Identity.Api.Middlewares;
 using Fcg.Identity.Api.OpenApi;
@@ -193,6 +194,7 @@ if (builder.Environment.IsDevelopment())
 }
 
 builder.Services.AddFcgGraphQL();
+builder.Services.AddIdentityHealthChecks();
 
 WebApplication app = builder.Build();
 
@@ -212,5 +214,6 @@ app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 app.MapGraphQL("/graphql");
+app.MapIdentityHealthChecks();
 
 await app.RunAsync();
