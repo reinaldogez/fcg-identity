@@ -1,4 +1,4 @@
-using Fcg.Identity.Application.Events;
+using Fcg.Contracts.Events;
 using Fcg.Identity.Infrastructure.Persistence;
 using Fcg.Identity.Tests.Integration.Fixtures;
 using FluentAssertions;

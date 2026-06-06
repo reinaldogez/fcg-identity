@@ -21,9 +21,43 @@ namespace Fcg.Identity.Tests.Integration.Fixtures;
 
 public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    public const string TestSigningKey = "chave-de-teste-com-tamanho-minimo-de-32-caracteres-ok";
     public const string TestIssuer = "FcgApi.Tests";
     public const string TestAudience = "FcgClients.Tests";
+    public const string TestKeyId = "fcg-identity-key-1";
+
+    // Chave RSA descartável, exclusiva da suíte de teste (gerada localmente, sem relação com a
+    // chave de qualquer ambiente). O processo da API a lê via Jwt__RsaPrivateKeyPem para assinar
+    // RS256; os testes derivam a chave pública correspondente para validar os tokens emitidos.
+    public const string TestRsaPrivateKeyPem = """
+        -----BEGIN PRIVATE KEY-----
+        MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDiQBueh8Ed/D0K
+        +kYx+Ak+5otwizeVDEmPq1+tvHBZqCjxZONbk7XUfaoegTt7kEzv9xf2noHCri9o
+        8K3i4q2sC5VvKSn8my/5qRqHzsD8gwIWx/0EApOMa/Xt3+/mMIHryolzTY8u/rjP
+        grBXI0D9ALCtAmaDTApQAAmfWFFqSEanI8sEAJxpAkr7vKsycs2BQNGDRsW0SdYr
+        jmWlEF9TJo5avalSAjYe58IzcKCLi0lPFgPFMWbm4gpQLsKFqofgOgMoaqWDC7tu
+        hXY9/lxOVlhR65VMNsN9kEtPl/ZYLa8zOnrdSJGGOweNK0xjjrd5a/KWNgHZxHFq
+        uHyufJfNAgMBAAECggEADLbzlmYkqS26tHo6Jaa9xkYogeug9QRawfMsjlPvsGot
+        2tsDl+rmJgnl3I8Aq8IBQN8O/rILssgdK/WSoBSDFA8Wl8elb2e9O3eQYR9yYv5t
+        yJ/2jRoj9pk+md6i2bnSI1EfhlZOfKKd+jNq+4qkpVM7mo1u+2PzlGlcIRNSh/lq
+        ydGvvECjJxvMQTGl25H1mZf2DJVJuQq3PI3shhGK3frLtnoFMECil4YZ0a46KrU1
+        v7nt6jJbmsIKaIliFxFhI6lD1oz9Vj3qZ73cHQ32A9jILtW020HASEWP2NGjDwo1
+        LJhSQsRpUXUvWFLS3QvdwjqS0Mk7vLOC1ym2ToFA4QKBgQDzZNRKjwYUiVzzJz2i
+        bUYDIxd0QT8ZGIQuHZCBkIEdH5kp/2CfF0tkoyFuo2TyhaLsdC8z4jCJvwYt4pRG
+        j8Nh1hT4M9X0k9OWke7d55Aobo+U8jL/Ummad3GJP7+Is/6/pGkQGHNi8QNufCfL
+        rId648Fue+nyCW+ZjF1VAjSB6QKBgQDt9/kQadTUNi/8xkD1o+Sg+MdzmhLp0pV3
+        ujkJi8Mdz+aF+ud0a2HjwNFsiAyGRMlmUAu+/MWoCwmWC5xjC46Uji7PDUSx0mzb
+        Iw0vzX5S42esZKnw5UEQI2TiSZLKCmlydMmSl1PSE3qv+AxjCzjPT4JEejcsP1G/
+        SQNnDLh0RQKBgGm5vs20WvvIv2uP/CH2PZdXQvTo8rPABorRpNfjIXK5KxsnJ51z
+        zPgmNHuO1mbSzfbQcUCkXFk5dUGxTp9oC4MQL4OxYJshK6QYOB6EXAZ0IEKfArAN
+        6HmEsPjhjB2hsmMk085+EIFGGCuCGvdKNn+XN4r6oKDWoHeelVw73PshAoGBANmp
+        7LX3p4Vn/yK9kGNewtv+UilKL6ySQscdndg+b30QUfIQ2q6hHgu9rZERLCuQNYuR
+        Af1ypbScS+tjuWrbAlKdbvFSWJgyOgGDISetVbOpb4W/GbZPa+DADyHwXATT2zmm
+        201rf27zBFB6mZHqjM8LEcNi6p5dWH+X4DXc68blAoGBAI+ZL/JxyoxVVCO7ylo+
+        JcJ41qgAlmbNiM8xbApaB81Zosvd6RMIhcYuZmYtCpGtqh3768zcGkDd1jZMiU1y
+        E9qEP703h6jcauYPOroi9vjOXPnR6GZTbtKmBZTV0rTkGl8Gnu4l2Pu3nP3xcBKL
+        LyEVyIo8XWSOtGPC9LHQBxtb
+        -----END PRIVATE KEY-----
+        """;
 
     private readonly MsSqlContainer _sqlContainer = new MsSqlBuilder(
         "mcr.microsoft.com/mssql/server:2022-latest"
@@ -37,7 +71,8 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         Environment.SetEnvironmentVariable("Jwt__Issuer", TestIssuer);
         Environment.SetEnvironmentVariable("Jwt__Audience", TestAudience);
-        Environment.SetEnvironmentVariable("Jwt__SigningKey", TestSigningKey);
+        Environment.SetEnvironmentVariable("Jwt__RsaPrivateKeyPem", TestRsaPrivateKeyPem);
+        Environment.SetEnvironmentVariable("Jwt__KeyId", TestKeyId);
         Environment.SetEnvironmentVariable("Jwt__AccessTokenExpirationMinutes", "60");
         Environment.SetEnvironmentVariable("Jwt__RefreshTokenExpirationDays", "7");
     }

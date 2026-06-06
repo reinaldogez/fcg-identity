@@ -465,7 +465,8 @@ public class UsuarioEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLi
         HttpClient client = _factory.CreateAuthenticatedClient(token);
 
         using IServiceScope scopeAntes = _factory.Services.CreateScope();
-        IdentityDbContext contextAntes = scopeAntes.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        IdentityDbContext contextAntes =
+            scopeAntes.ServiceProvider.GetRequiredService<IdentityDbContext>();
         string hashAntes = (await contextAntes.Usuarios.FindAsync(id))!.SenhaHash.Valor;
 
         await client.PostAsJsonAsync(
@@ -474,7 +475,8 @@ public class UsuarioEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLi
         );
 
         using IServiceScope scopeDepois = _factory.Services.CreateScope();
-        IdentityDbContext contextDepois = scopeDepois.ServiceProvider.GetRequiredService<IdentityDbContext>();
+        IdentityDbContext contextDepois =
+            scopeDepois.ServiceProvider.GetRequiredService<IdentityDbContext>();
         string hashDepois = (await contextDepois.Usuarios.FindAsync(id))!.SenhaHash.Valor;
 
         hashDepois.Should().NotBe(hashAntes);
