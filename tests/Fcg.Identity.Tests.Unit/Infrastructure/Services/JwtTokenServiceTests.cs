@@ -1,6 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
+using System.Security.Cryptography;
 using Fcg.Identity.Application.DTOs;
 using Fcg.Identity.Application.Interfaces;
 using Fcg.Identity.Application.Options;
@@ -14,17 +14,20 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Fcg.Identity.Tests.Unit.Infrastructure.Services;
 
-public class JwtTokenServiceTests
+public sealed class JwtTokenServiceTests : IDisposable
 {
-    private const string SigningKey = "chave-de-teste-com-tamanho-minimo-de-32-caracteres-ok";
     private const string Issuer = "FcgApi.Tests";
     private const string Audience = "FcgClients.Tests";
+    private const string KeyId = "fcg-identity-key-1";
+
+    private static readonly string _rsaPrivateKeyPem = GerarPemDeTeste();
 
     private readonly JwtSettings _settings = new()
     {
         Issuer = Issuer,
         Audience = Audience,
-        SigningKey = SigningKey,
+        RsaPrivateKeyPem = _rsaPrivateKeyPem,
+        KeyId = KeyId,
         AccessTokenExpirationMinutes = 60,
         RefreshTokenExpirationDays = 7,
     };
@@ -146,12 +149,13 @@ public class JwtTokenServiceTests
     }
 
     [Fact]
-    public void DeveAssinarTokenComHmacSha256()
+    public void DeveAssinarTokenComRsaSha256EIncluirKidNoHeader()
     {
         AccessToken resultado = _service.GerarAccessToken(_usuario);
         JwtSecurityToken token = LerToken(resultado.Token);
 
-        token.SignatureAlgorithm.Should().Be(SecurityAlgorithms.HmacSha256);
+        token.Header.Alg.Should().Be(SecurityAlgorithms.RsaSha256);
+        token.Header.Kid.Should().Be(KeyId);
     }
 
     [Fact]
@@ -168,7 +172,7 @@ public class JwtTokenServiceTests
             ValidAudience = Audience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SigningKey)),
+            IssuerSigningKey = CriarChaveValidacaoPublica(),
             ClockSkew = TimeSpan.Zero,
         };
 
@@ -233,6 +237,25 @@ public class JwtTokenServiceTests
         hash.Should().Be(gerado.Hash);
     }
 
+    public void Dispose()
+    {
+        _service.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
     private static JwtSecurityToken LerToken(string tokenString) =>
         new JwtSecurityTokenHandler().ReadJwtToken(tokenString);
+
+    private static string GerarPemDeTeste()
+    {
+        using var rsa = RSA.Create(2048);
+        return rsa.ExportPkcs8PrivateKeyPem();
+    }
+
+    private static RsaSecurityKey CriarChaveValidacaoPublica()
+    {
+        using var rsa = RSA.Create();
+        rsa.ImportFromPem(_rsaPrivateKeyPem);
+        return new RsaSecurityKey(rsa.ExportParameters(includePrivateParameters: false));
+    }
 }

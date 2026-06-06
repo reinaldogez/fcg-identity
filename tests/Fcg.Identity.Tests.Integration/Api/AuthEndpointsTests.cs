@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Fcg.Identity.Application.DTOs;
@@ -163,9 +164,7 @@ public class AuthEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLifet
             ValidAudience = IdentityApiFactory.TestAudience,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(IdentityApiFactory.TestSigningKey)
-            ),
+            IssuerSigningKey = CriarChaveValidacaoPublica(),
             ClockSkew = TimeSpan.FromSeconds(5),
         };
 
@@ -377,6 +376,13 @@ public class AuthEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLifet
         erro!.Type.Should().Be("ErroDeAutenticacao");
         erro.Status.Should().Be(401);
         erro.Errors.Should().ContainSingle().Which.Should().Be("Credenciais inválidas.");
+    }
+
+    private static RsaSecurityKey CriarChaveValidacaoPublica()
+    {
+        using var rsa = RSA.Create();
+        rsa.ImportFromPem(IdentityApiFactory.TestRsaPrivateKeyPem);
+        return new RsaSecurityKey(rsa.ExportParameters(includePrivateParameters: false));
     }
 
     private async Task<LoginResponse> LoginAsync()

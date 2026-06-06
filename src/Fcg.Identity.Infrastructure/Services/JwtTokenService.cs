@@ -11,9 +11,29 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Fcg.Identity.Infrastructure.Services;
 
-public class JwtTokenService(IOptions<JwtSettings> settings) : IJwtTokenService
+public sealed class JwtTokenService : IJwtTokenService, IDisposable
 {
-    private readonly JwtSettings _settings = settings.Value;
+    private readonly JwtSettings _settings;
+    private readonly RSA _rsa;
+    private readonly SigningCredentials _signingCredentials;
+
+    public JwtTokenService(IOptions<JwtSettings> settings)
+    {
+        _settings = settings.Value;
+        _rsa = RSA.Create();
+        _rsa.ImportFromPem(_settings.RsaPrivateKeyPem);
+
+        // O provider de assinatura fica fora do cache estático global do Microsoft.IdentityModel:
+        // como este serviço é dono da RSA e a descarta no Dispose, um provider mantido no cache
+        // global sobreviveria à RSA descartada e quebraria assinaturas posteriores que reusassem
+        // a mesma entrada de cache (mesma chave).
+        var key = new RsaSecurityKey(_rsa)
+        {
+            KeyId = _settings.KeyId,
+            CryptoProviderFactory = new CryptoProviderFactory { CacheSignatureProviders = false },
+        };
+        _signingCredentials = new SigningCredentials(key, SecurityAlgorithms.RsaSha256);
+    }
 
     public AccessToken GerarAccessToken(Usuario usuario)
     {
@@ -28,16 +48,13 @@ public class JwtTokenService(IOptions<JwtSettings> settings) : IJwtTokenService
             new(ClaimTypes.Role, usuario.Tipo.ToString()),
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_settings.SigningKey));
-        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
         var token = new JwtSecurityToken(
             issuer: _settings.Issuer,
             audience: _settings.Audience,
             claims: claims,
             notBefore: DateTime.UtcNow,
             expires: expiraEm,
-            signingCredentials: credentials
+            signingCredentials: _signingCredentials
         );
 
         string tokenString = new JwtSecurityTokenHandler().WriteToken(token);
@@ -61,4 +78,6 @@ public class JwtTokenService(IOptions<JwtSettings> settings) : IJwtTokenService
         byte[] hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(plaintext));
         return Convert.ToHexString(hashBytes);
     }
+
+    public void Dispose() => _rsa.Dispose();
 }

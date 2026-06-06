@@ -1,7 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using System.Threading.RateLimiting;
+using Fcg.Identity.Api.Authentication;
 using Fcg.Identity.Api.Authorization;
 using Fcg.Identity.Api.GraphQL;
 using Fcg.Identity.Api.Logging;
@@ -112,12 +112,7 @@ JwtSettings jwtSettings =
     builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("Seção 'Jwt' não configurada.");
 
-if (jwtSettings.SigningKey.Length < 32)
-{
-    throw new InvalidOperationException(
-        "Jwt:SigningKey deve ter no mínimo 32 caracteres (256 bits) para assinar tokens com HS256. Configure via user-secrets ou variável de ambiente."
-    );
-}
+RsaSecurityKey chaveValidacao = JwtKeyConfiguration.CriarChaveDeValidacao(jwtSettings);
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 
@@ -137,9 +132,7 @@ builder
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtSettings.SigningKey)
-            ),
+            IssuerSigningKey = chaveValidacao,
             RoleClaimType = ClaimTypes.Role,
             NameClaimType = JwtRegisteredClaimNames.Sub,
         };
@@ -169,7 +162,7 @@ builder.Services.AddIdentityMessaging(builder.Configuration);
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<ISenhaService, SenhaService>();
-builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IUsuarioDomainService, UsuarioDomainService>();
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
 builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
