@@ -10,9 +10,8 @@ namespace Fcg.Identity.Tests.Integration.Messaging;
 
 // Prova que o bus está registrado no DI e o Outbox grava, sem acionar o fluxo de cadastro de
 // usuário e sem depender do pacote de contratos compartilhado.
-public class MassTransitOutboxTests(IdentityApiFactory factory)
-    : IClassFixture<IdentityApiFactory>,
-        IAsyncLifetime
+[Collection("Integration")]
+public class MassTransitOutboxTests(IdentityApiFactory factory) : IAsyncLifetime
 {
     public Task InitializeAsync() => factory.ResetarBancoAsync();
 

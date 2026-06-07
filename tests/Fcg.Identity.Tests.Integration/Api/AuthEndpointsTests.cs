@@ -19,7 +19,8 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class AuthEndpointsTests : IClassFixture<IdentityApiFactory>, IAsyncLifetime
+[Collection("Integration")]
+public class AuthEndpointsTests : IAsyncLifetime
 {
     private const string EmailUsuario = "login@fcg.com";
     private const string SenhaUsuario = "Senha@123";

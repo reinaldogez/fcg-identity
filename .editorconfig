@@ -281,6 +281,10 @@ dotnet_diagnostic.CA1849.severity = none
 # Assertivas de normalização para lowercase em testes de e-mail são corretas
 dotnet_diagnostic.CA1308.severity = none
 
+# A classe-marcadora de coleção do xUnit usa o sufixo "Collection" por convenção do framework
+[tests/**/Fixtures/IntegrationCollection.cs]
+dotnet_diagnostic.CA1711.severity = none
+
 # ============================================================================
 # Código gerado pelo EF Core (migrations)
 # ============================================================================

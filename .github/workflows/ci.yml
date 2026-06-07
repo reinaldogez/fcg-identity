@@ -18,6 +18,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.x"
+          source-url: https://nuget.pkg.github.com/reinaldogez/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore
@@ -52,6 +55,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.x"
+          source-url: https://nuget.pkg.github.com/reinaldogez/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore
@@ -86,6 +92,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.x"
+          source-url: https://nuget.pkg.github.com/reinaldogez/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore
@@ -129,6 +138,9 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.x"
+          source-url: https://nuget.pkg.github.com/reinaldogez/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Restore
         run: dotnet restore
