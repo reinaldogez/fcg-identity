@@ -5,6 +5,7 @@ using Fcg.Identity.Api.Authentication;
 using Fcg.Identity.Api.Authorization;
 using Fcg.Identity.Api.GraphQL;
 using Fcg.Identity.Api.Health;
+using Fcg.Identity.Api.Jwks;
 using Fcg.Identity.Api.Logging;
 using Fcg.Identity.Api.Middlewares;
 using Fcg.Identity.Api.OpenApi;
@@ -208,5 +209,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapGraphQL("/graphql");
 app.MapIdentityHealthChecks();
+app.MapJwksEndpoint();
 
 await app.RunAsync();
