@@ -13,7 +13,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class AdminRelatoriosTests : IClassFixture<IdentityApiFactory>, IAsyncLifetime
+[Collection("Integration")]
+public class AdminRelatoriosTests : IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {

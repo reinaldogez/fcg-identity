@@ -7,9 +7,8 @@ using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Fcg.Identity.Tests.Integration.Api;
 
-public class UsuariosGraphQLTests(IdentityApiFactory factory)
-    : IClassFixture<IdentityApiFactory>,
-        IAsyncLifetime
+[Collection("Integration")]
+public class UsuariosGraphQLTests(IdentityApiFactory factory) : IAsyncLifetime
 {
     private static readonly JsonSerializerOptions _jsonOptions = new()
     {

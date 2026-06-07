@@ -67,6 +67,12 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
         "rabbitmq:4-management"
     ).Build();
 
+    // URI do broker, descoberta só após StartAsync (porta dinâmica do Testcontainer). É injetada via
+    // config in-memory por-factory (não env var global), evitando corrida entre factories concorrentes.
+    // Funciona porque RabbitMq:Uri só é lido tarde (no start do bus). Já o Jwt é lido cedo, durante o
+    // Build do host, antes de a config in-memory da factory ser mesclada — por isso vai por env var.
+    private string? _rabbitMqUri;
+
     static IdentityApiFactory()
     {
         Environment.SetEnvironmentVariable("Jwt__Issuer", TestIssuer);
@@ -81,14 +87,9 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         await Task.WhenAll(_sqlContainer.StartAsync(), _rabbitMqContainer.StartAsync());
 
-        // O bus lê o host RabbitMQ de RabbitMq:Uri. A porta do Testcontainer é dinâmica, então só
-        // conhecemos a URI após StartAsync. Setamos a env var ANTES do primeiro acesso a `Services`
-        // (o MigrateAsync abaixo força o CreateBuilder), mantendo o padrão de configuração-antes-do-
-        // boot já usado para o Jwt.
-        Environment.SetEnvironmentVariable(
-            "RabbitMq__Uri",
-            _rabbitMqContainer.GetConnectionString()
-        );
+        // Guardamos a URI ANTES do primeiro acesso a `Services` (o MigrateAsync abaixo força o
+        // CreateBuilder, que dispara o ConfigureWebHost e lê esta config).
+        _rabbitMqUri = _rabbitMqContainer.GetConnectionString();
 
         using IServiceScope scope = Services.CreateScope();
         IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
@@ -152,6 +153,7 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                             CultureInfo.InvariantCulture
                         ),
                         ["RateLimit:WindowInSeconds"] = "60",
+                        ["RabbitMq:Uri"] = _rabbitMqUri,
                     }
                 );
             }
@@ -173,6 +175,25 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 && d.ImplementationType == typeof(AdminSeedService)
             );
             services.Remove(seedDescriptor);
+
+            // O host de teste é compartilhado e de vida longa. O serviço de entrega do Outbox do
+            // MassTransit varreria as tabelas OutboxState/OutboxMessage em background e entraria em
+            // deadlock com o DELETE do reset de banco entre os testes. Como o Outbox grava as linhas
+            // no SaveChanges sem depender do sweeper, e nenhum teste verifica a entrega real ao broker,
+            // basta não iniciar os hosted services do bus — IBus/IPublishEndpoint seguem resolvíveis.
+            var busHostedServices = services
+                .Where(d =>
+                    d.ServiceType == typeof(IHostedService)
+                    && d.ImplementationType?.Namespace?.StartsWith(
+                        "MassTransit",
+                        StringComparison.Ordinal
+                    ) == true
+                )
+                .ToList();
+            foreach (ServiceDescriptor busHostedService in busHostedServices)
+            {
+                services.Remove(busHostedService);
+            }
         });
     }
 

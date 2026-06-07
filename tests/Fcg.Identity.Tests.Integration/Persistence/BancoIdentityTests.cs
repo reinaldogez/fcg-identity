@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Fcg.Identity.Tests.Integration.Persistence;
 
-public class BancoIdentityTests(IdentityApiFactory factory) : IClassFixture<IdentityApiFactory>
+[Collection("Integration")]
+public class BancoIdentityTests(IdentityApiFactory factory)
 {
     [Fact]
     public async Task BancoUsadoNosTestesDeveChamarSeIdentity()
