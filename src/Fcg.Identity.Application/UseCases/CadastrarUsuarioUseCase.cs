@@ -1,8 +1,10 @@
+using Fcg.Contracts.Events;
 using Fcg.Identity.Application.DTOs;
 using Fcg.Identity.Application.Interfaces;
 using Fcg.Identity.Domain.Entities;
 using Fcg.Identity.Domain.Interfaces;
 using Fcg.Identity.Domain.ValueObjects;
+using MassTransit;
 
 namespace Fcg.Identity.Application.UseCases;
 
@@ -10,7 +12,8 @@ public class CadastrarUsuarioUseCase(
     IUsuarioDomainService usuarioDomainService,
     IUsuarioRepository repositorio,
     ISenhaService senhaService,
-    IUnitOfWork unitOfWork
+    IUnitOfWork unitOfWork,
+    IPublishEndpoint publishEndpoint
 )
 {
     public async Task<UsuarioResponse> ExecutarAsync(
@@ -30,6 +33,22 @@ public class CadastrarUsuarioUseCase(
         );
 
         await repositorio.AdicionarAsync(usuario, cancellationToken);
+
+        // O publish antes do SalvarAlteracoesAsync é intencional: o Outbox do bus intercepta a
+        // chamada e grava a mensagem como linha de OutboxMessage no mesmo commit do Usuario —
+        // atômico. A entrega ao broker acontece em background, depois do commit.
+        await publishEndpoint.Publish(
+            new UserCreatedEvent
+            {
+                EventVersion = 1,
+                OccurredAt = DateTimeOffset.UtcNow,
+                UserId = usuario.Id,
+                Name = usuario.Nome,
+                Email = usuario.Email.Endereco,
+            },
+            cancellationToken
+        );
+
         await unitOfWork.SalvarAlteracoesAsync(cancellationToken);
 
         return new UsuarioResponse(
