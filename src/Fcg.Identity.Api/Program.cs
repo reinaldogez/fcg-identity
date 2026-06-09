@@ -26,29 +26,62 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Scalar.AspNetCore;
 using Serilog;
+using Serilog.Sinks.Grafana.Loki;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
+// Sinks/exporters de rede (Loki, OTLP) só entram no pipeline quando o endpoint está
+// configurado (ConfigMap no k8s); sem endpoint a app sobe sem tentativa alguma de conexão.
+string? lokiUrl = builder.Configuration["Loki:Url"];
+bool otlpHabilitado = !string.IsNullOrWhiteSpace(
+    builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"]
+);
+
 builder.Services.AddSerilog(
     (services, lc) =>
-        lc
-            .ReadFrom.Configuration(builder.Configuration)
+    {
+        lc.ReadFrom.Configuration(builder.Configuration)
             .ReadFrom.Services(services)
             .Enrich.FromLogContext()
             .Enrich.WithMachineName()
             .Enrich.WithEnvironmentName()
             .Enrich.WithProperty("Application", "Fcg.Identity.Api")
-            .Enrich.With<ActivityEnricher>()
+            .Enrich.With<ActivityEnricher>();
+
+        if (!string.IsNullOrWhiteSpace(lokiUrl))
+        {
+            lc.WriteTo.GrafanaLoki(
+                lokiUrl,
+                labels: [new LokiLabel { Key = "app", Value = "fcg-identity" }]
+            );
+        }
+    }
 );
 
 builder
     .Services.AddOpenTelemetry()
     .ConfigureResource(r => r.AddService(serviceName: "Fcg.Identity.Api", serviceVersion: "1.0.0"))
-    .WithTracing(t => t.AddAspNetCoreInstrumentation().AddConsoleExporter());
+    .WithTracing(t =>
+    {
+        t.AddAspNetCoreInstrumentation().AddSource("MassTransit").AddConsoleExporter();
+        if (otlpHabilitado)
+        {
+            t.AddOtlpExporter();
+        }
+    })
+    .WithMetrics(m =>
+    {
+        m.AddAspNetCoreInstrumentation().AddMeter("MassTransit");
+        if (otlpHabilitado)
+        {
+            m.AddOtlpExporter();
+        }
+    });
 
 builder
     .Services.AddControllers()
