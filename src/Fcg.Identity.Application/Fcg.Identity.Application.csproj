@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="Fcg.Contracts" Version="1.0.0" />
+    <PackageReference Include="MassTransit.Abstractions" Version="9.1.1" />
   </ItemGroup>
 
   <PropertyGroup>
