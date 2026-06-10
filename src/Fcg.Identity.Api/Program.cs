@@ -225,6 +225,17 @@ builder.Services.AddIdentityHealthChecks();
 
 WebApplication app = builder.Build();
 
+// Migração é ato explícito: o Job dedicado reusa esta imagem com --migrate, aplica as
+// migrations pendentes e encerra sem subir o host web. O boot normal não migra.
+if (args.Contains("--migrate"))
+{
+    using IServiceScope migrationScope = app.Services.CreateScope();
+    await migrationScope
+        .ServiceProvider.GetRequiredService<IdentityDbContext>()
+        .Database.MigrateAsync();
+    return;
+}
+
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseSerilogRequestLogging();
 
