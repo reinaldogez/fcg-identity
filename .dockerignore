@@ -1,0 +1,18 @@
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+
+# IDE / editor
+.vs/
+.vscode/
+**/*.user
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Local env / secrets
+.env
+**/appsettings.*.local.json
