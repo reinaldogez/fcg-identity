@@ -69,7 +69,7 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 
     // URI do broker, descoberta só após StartAsync (porta dinâmica do Testcontainer). É injetada via
     // config in-memory por-factory (não env var global), evitando corrida entre factories concorrentes.
-    // Funciona porque RabbitMq:Uri só é lido tarde (no start do bus). Já o Jwt é lido cedo, durante o
+    // Funciona porque RabbitMq:* só é lido tarde (no start do bus). Já o Jwt é lido cedo, durante o
     // Build do host, antes de a config in-memory da factory ser mesclada — por isso vai por env var.
     private string? _rabbitMqUri;
 
@@ -143,6 +143,11 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
         builder.UseEnvironment("Testing");
 
+        // O Testcontainer expõe a conexão como URI única (porta dinâmica); o app lê os campos
+        // separados (Host/Port/Username/Password), então decompomos a URI nas mesmas chaves de config.
+        var brokerUri = new Uri(_rabbitMqUri!);
+        string[] userInfo = brokerUri.UserInfo.Split(':');
+
         builder.ConfigureAppConfiguration(
             (_, config) =>
             {
@@ -153,7 +158,10 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                             CultureInfo.InvariantCulture
                         ),
                         ["RateLimit:WindowInSeconds"] = "60",
-                        ["RabbitMq:Uri"] = _rabbitMqUri,
+                        ["RabbitMq:Host"] = brokerUri.Host,
+                        ["RabbitMq:Port"] = brokerUri.Port.ToString(CultureInfo.InvariantCulture),
+                        ["RabbitMq:Username"] = userInfo[0],
+                        ["RabbitMq:Password"] = userInfo.Length > 1 ? userInfo[1] : string.Empty,
                     }
                 );
             }

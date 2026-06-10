@@ -28,14 +28,36 @@ public static class MassTransitConfiguration
             x.UsingRabbitMq(
                 (context, cfg) =>
                 {
-                    // Host vem de config: env var em ambiente de teste (porta dinâmica do
-                    // Testcontainer), ConfigMap+Secret em produção, user-secrets/.env em dev local.
+                    // Conexão vem de config em campos separados: endereço (Host/Port) não-sensível
+                    // via ConfigMap; credencial (Username/Password) via Secret. Em teste vêm da config
+                    // in-memory (porta dinâmica do Testcontainer); em dev local de user-secrets/.env.
                     // Fail-fast no mesmo espírito de DefaultConnection/Jwt.
-                    string uri =
-                        configuration["RabbitMq:Uri"]
-                        ?? throw new InvalidOperationException("RabbitMq:Uri não configurada.");
+                    string host =
+                        configuration["RabbitMq:Host"]
+                        ?? throw new InvalidOperationException("RabbitMq:Host não configurado.");
+                    string username =
+                        configuration["RabbitMq:Username"]
+                        ?? throw new InvalidOperationException("RabbitMq:Username não configurado.");
+                    string password =
+                        configuration["RabbitMq:Password"]
+                        ?? throw new InvalidOperationException("RabbitMq:Password não configurado.");
+                    ushort port = ushort.TryParse(
+                        configuration["RabbitMq:Port"],
+                        out ushort parsedPort
+                    )
+                        ? parsedPort
+                        : (ushort)5672;
 
-                    cfg.Host(new Uri(uri));
+                    cfg.Host(
+                        host,
+                        port,
+                        "/",
+                        h =>
+                        {
+                            h.Username(username);
+                            h.Password(password);
+                        }
+                    );
 
                     cfg.Message<UserCreatedEvent>(m => m.SetEntityName("user-created"));
                     cfg.Publish<UserCreatedEvent>(p => p.ExchangeType = "fanout");
