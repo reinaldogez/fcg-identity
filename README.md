@@ -39,7 +39,7 @@ cadastrado; **não consome nenhum evento**.
   - [Rodar os testes](#rodar-os-testes)
   - [CI/CD (GitHub Actions)](#cicd-github-actions)
     - [Secrets do repositório](#secrets-do-repositório)
-    - [⚠️ Passo manual: tornar a imagem GHCR pública](#️-passo-manual-tornar-a-imagem-ghcr-pública)
+    - [Visibilidade da imagem no GHCR](#visibilidade-da-imagem-no-ghcr)
   - [Autenticação e Autorização](#autenticação-e-autorização)
     - [Access token e claims](#access-token-e-claims)
     - [Fluxo](#fluxo)
@@ -262,11 +262,14 @@ e em PRs para `main`:
 Os testes **não** dependem de secrets do GitHub: a `IdentityApiFactory` injeta as configurações de JWT de
 teste por variável de ambiente e remove o seed do DI.
 
-### ⚠️ Passo manual: tornar a imagem GHCR pública
+### Visibilidade da imagem no GHCR
 
-Pacotes no GHCR **nascem privados**. Após o **primeiro** push bem-sucedido do job `publish`, abra o package
-`fcg-identity` em **GitHub → Packages → Package settings** e altere a visibilidade para **Public** (uma única
-vez). Sem isso, os consumidores precisam de token para fazer `docker pull`.
+A imagem carrega o label `org.opencontainers.image.source` apontando para este repositório (definido no
+`Dockerfile`). O GHCR usa esse vínculo para conectar o pacote ao repo e **herdar a sua visibilidade** —
+como o repositório é público, o pacote **nasce público**, sem nenhum passo manual após o primeiro push.
+
+> Se o repositório fosse privado, o pacote nasceria privado; aí, sim, seria preciso ajustar a visibilidade
+> em **GitHub → Packages → Package settings** para liberar `docker pull` anônimo.
 
 ## Autenticação e Autorização
 
