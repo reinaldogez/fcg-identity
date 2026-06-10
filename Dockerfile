@@ -19,6 +19,10 @@ COPY src/ src/
 RUN dotnet publish "src/Fcg.Identity.Api/Fcg.Identity.Api.csproj" -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine AS final
+# Vincula a imagem ao repositório de origem. O GHCR usa este label para conectar o
+# pacote ao repo e herdar a sua visibilidade — como o repo é público, o pacote nasce
+# público, sem passo manual de tornar a imagem pública após o primeiro push.
+LABEL org.opencontainers.image.source="https://github.com/reinaldogez/fcg-identity"
 # A imagem alpine não traz ICU e roda em globalization-invariant mode, que o
 # Microsoft.Data.SqlClient recusa. Instala o ICU e desliga o modo invariante.
 RUN apk add --no-cache icu-libs
