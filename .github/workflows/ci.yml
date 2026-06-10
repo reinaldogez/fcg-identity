@@ -10,6 +10,9 @@ jobs:
   unit-tests:
     name: Testes Unitários
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read # restore do Fcg.Contracts (feed NuGet do GitHub Packages exige token)
 
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +50,9 @@ jobs:
   integration-tests:
     name: Testes de Integração
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read # restore do Fcg.Contracts (feed NuGet do GitHub Packages exige token)
 
     steps:
       - uses: actions/checkout@v4
@@ -84,6 +90,9 @@ jobs:
   bdd-tests:
     name: Testes BDD (Reqnroll)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read # restore do Fcg.Contracts (feed NuGet do GitHub Packages exige token)
 
     steps:
       - uses: actions/checkout@v4
@@ -122,6 +131,9 @@ jobs:
     name: SonarCloud Analysis
     runs-on: ubuntu-latest
     needs: [unit-tests, integration-tests, bdd-tests]
+    permissions:
+      contents: read
+      packages: read # restore do Fcg.Contracts (feed NuGet do GitHub Packages exige token)
 
     steps:
       - uses: actions/checkout@v4
@@ -186,3 +198,39 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: dotnet sonarscanner end /d:sonar.token="$SONAR_TOKEN"
+
+  publish:
+    name: Publicar imagem (GHCR)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests, bdd-tests]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write # push da imagem ao GHCR
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login no GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Metadados da imagem (owner em minúsculo)
+        id: img
+        run: echo "repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/fcg-identity" >> "$GITHUB_OUTPUT"
+
+      # O Dockerfile faz restore interno do Fcg.Contracts e exige o token via BuildKit secret
+      # (id=gh_token); o build-push-action usa Buildx, então o secret satisfaz o --mount do RUN.
+      - name: Build e push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.img.outputs.repo }}:latest
+            ${{ steps.img.outputs.repo }}:${{ github.sha }}
+          secrets: |
+            gh_token=${{ secrets.GITHUB_TOKEN }}
