@@ -296,6 +296,9 @@ generated_code = true
 # ============================================================================
 [tests/Fcg.Identity.Tests.Bdd/Features/**.feature.cs]
 generated_code = true
+# Compiler warnings comuns em código gerado pelo Reqnroll
+dotnet_diagnostic.CS4014.severity = none
+dotnet_diagnostic.CS0219.severity = none
 
 # ============================================================================
 # Middlewares de erro — catch geral de Exception é intencional
