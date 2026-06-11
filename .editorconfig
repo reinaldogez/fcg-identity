@@ -331,3 +331,11 @@ dotnet_diagnostic.CA1873.severity = none
 [src/Fcg.Identity.Api/Controllers/**.cs]
 # Controllers REST de um agregado naturalmente têm múltiplos endpoints
 dotnet_diagnostic.S6960.severity = none
+
+# ============================================================================
+# Config do bus de mensageria — registro e topology das lambdas
+# ============================================================================
+[src/Fcg.Identity.Infrastructure/Messaging/**.cs]
+# Registro/topology do bus (AddMassTransit, UsingRabbitMq, SetEntityName) hoje não
+# dispara nenhum warning de analyzer — escopo reservado para supressão pontual caso
+# a config do bus passe a exigir, evitando #pragma na fonte.
