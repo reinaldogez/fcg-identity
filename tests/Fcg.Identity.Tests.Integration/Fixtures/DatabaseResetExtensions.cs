@@ -10,6 +10,7 @@ public static class DatabaseResetExtensions
     {
         using IServiceScope scope = factory.Services.CreateScope();
         IdentityDbContext context = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
         // Tabelas do Outbox primeiro: OutboxMessage tem FKs para InboxState/OutboxState.
         await context.Database.ExecuteSqlRawAsync("DELETE FROM OutboxMessage");
         await context.Database.ExecuteSqlRawAsync("DELETE FROM OutboxState");
