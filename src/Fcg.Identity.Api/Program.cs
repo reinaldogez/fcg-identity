@@ -9,18 +9,12 @@ using Fcg.Identity.Api.Jwks;
 using Fcg.Identity.Api.Logging;
 using Fcg.Identity.Api.Middlewares;
 using Fcg.Identity.Api.OpenApi;
-using Fcg.Identity.Application.Interfaces;
+using Fcg.Identity.Application;
 using Fcg.Identity.Application.Options;
-using Fcg.Identity.Application.UseCases;
-using Fcg.Identity.Application.UseCases.Relatorios;
 using Fcg.Identity.Domain.Interfaces;
 using Fcg.Identity.Domain.Services;
-using Fcg.Identity.Infrastructure.Dapper;
-using Fcg.Identity.Infrastructure.Dapper.ReadRepositories;
-using Fcg.Identity.Infrastructure.Messaging;
+using Fcg.Identity.Infrastructure;
 using Fcg.Identity.Infrastructure.Persistence;
-using Fcg.Identity.Infrastructure.Persistence.Repositories;
-using Fcg.Identity.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
@@ -187,38 +181,9 @@ builder.Services.AddAuthorization(options =>
     );
 });
 
-string connectionString =
-    builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection não configurada.");
-builder.Services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(connectionString));
-
-builder.Services.AddIdentityMessaging(builder.Configuration);
-
-builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-builder.Services.AddScoped<ISenhaService, SenhaService>();
-builder.Services.AddSingleton<IJwtTokenService, JwtTokenService>();
+builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
+builder.Services.AddApplication();
 builder.Services.AddScoped<IUsuarioDomainService, UsuarioDomainService>();
-builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<IdentityDbContext>());
-builder.Services.AddScoped<IDbConnectionFactory, SqlConnectionFactory>();
-builder.Services.AddScoped<IUsuarioReadRepository, UsuarioReadRepository>();
-builder.Services.AddScoped<CadastrarUsuarioUseCase>();
-builder.Services.AddScoped<ObterUsuarioPorIdUseCase>();
-builder.Services.AddScoped<ListarUsuariosUseCase>();
-builder.Services.AddScoped<AtualizarUsuarioUseCase>();
-builder.Services.AddScoped<AlterarSenhaUseCase>();
-builder.Services.AddScoped<DesativarUsuarioUseCase>();
-builder.Services.AddScoped<AtivarUsuarioUseCase>();
-builder.Services.AddScoped<AlterarTipoUsuarioUseCase>();
-builder.Services.AddScoped<LoginUseCase>();
-builder.Services.AddScoped<RefreshTokenUseCase>();
-builder.Services.AddScoped<LogoutUseCase>();
-builder.Services.AddScoped<ObterRelatorioUsuariosUseCase>();
-builder.Services.AddHostedService<AdminSeedService>();
-if (builder.Environment.IsDevelopment())
-{
-    builder.Services.AddHostedService<DevSeedService>();
-}
 
 builder.Services.AddFcgGraphQL();
 builder.Services.AddIdentityHealthChecks();

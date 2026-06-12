@@ -339,3 +339,12 @@ dotnet_diagnostic.S6960.severity = none
 # Registro/topology do bus (AddMassTransit, UsingRabbitMq, SetEntityName) hoje não
 # dispara nenhum warning de analyzer — escopo reservado para supressão pontual caso
 # a config do bus passe a exigir, evitando #pragma na fonte.
+
+# ============================================================================
+# Extensões de DI por camada — classe DependencyInjection é o nome idiomático
+# ============================================================================
+[src/Fcg.Identity.{Application,Infrastructure}/DependencyInjection.cs]
+# O nome DependencyInjection colide de propósito com o namespace homônimo do
+# framework; é o nome de mercado para a composição de cada camada, renomeá-lo
+# só para silenciar o analyzer perderia a convenção.
+dotnet_diagnostic.CA1724.severity = none
