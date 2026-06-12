@@ -236,8 +236,8 @@ if (args.Contains("--migrate"))
     return;
 }
 
-app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseSerilogRequestLogging();
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

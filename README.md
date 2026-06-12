@@ -28,14 +28,8 @@ cadastrado; **não consome nenhum evento**.
     - [Health checks](#health-checks)
   - [Variáveis de ambiente](#variáveis-de-ambiente)
   - [Rodar local (primeira vez)](#rodar-local-primeira-vez)
-    - [Pré-requisitos](#pré-requisitos)
-    - [1. Autenticar o feed do `Fcg.Contracts`](#1-autenticar-o-feed-do-fcgcontracts)
-    - [2. Variáveis de ambiente do Docker](#2-variáveis-de-ambiente-do-docker)
-    - [3. Subir SQL Server + RabbitMQ](#3-subir-sql-server--rabbitmq)
-    - [4. Gerar a chave RSA](#4-gerar-a-chave-rsa)
-    - [5. Configurar os User Secrets da aplicação](#5-configurar-os-user-secrets-da-aplicação)
-    - [6. Aplicar as migrations](#6-aplicar-as-migrations)
-    - [7. Rodar a API](#7-rodar-a-api)
+    - [Subir a plataforma via `fcg-ops` (recomendado)](#subir-a-plataforma-via-fcg-ops-recomendado)
+    - [Desenvolver o serviço (inner loop)](#desenvolver-o-serviço-inner-loop)
   - [Rodar os testes](#rodar-os-testes)
   - [CI/CD (GitHub Actions)](#cicd-github-actions)
     - [Secrets do repositório](#secrets-do-repositório)
@@ -65,7 +59,7 @@ cadastrado; **não consome nenhum evento**.
 - **xUnit + FluentAssertions + Moq** — testes unitários
 - **Microsoft.AspNetCore.Mvc.Testing + Testcontainers** (`MsSql` **+ RabbitMQ**) — testes de integração
 - **Reqnroll (xUnit)** — testes BDD com cenários Gherkin em PT-BR
-- **Docker Compose** — SQL Server + RabbitMQ local
+- **Docker Compose** (no `fcg-ops`) — orquestração local: SQL Server, RabbitMQ e a stack de observabilidade
 - **SonarCloud** — análise estática e cobertura (coverlet/opencover)
 
 ## Arquitetura
@@ -158,17 +152,48 @@ de onde o valor deve vir no deploy: **Secret** (sensível) ou **ConfigMap** (nã
 
 ## Rodar local (primeira vez)
 
-Secrets **nunca** ficam no repositório — vêm de `.env` (Docker) e .NET User Secrets (aplicação).
+A orquestração — Docker Compose, infra compartilhada e o Job de migrations — vive no repositório
+**`fcg-ops`**, que centraliza SQL Server, RabbitMQ e a stack de observabilidade de todos os serviços
+da fase. Este repositório contém só o serviço e o seu `Dockerfile`. Há dois caminhos:
 
-### Pré-requisitos
+- **Subir a plataforma (recomendado)** — tudo via `fcg-ops` num único `docker compose up`: infra,
+  migrations, a API e a observabilidade. Não precisa do SDK .NET nem de User Secrets; toda a
+  configuração vem do `.env`/override do `fcg-ops`.
+- **Desenvolver o serviço** — o ciclo de edição deste repositório: testes com Testcontainers e,
+  opcionalmente, a API ao vivo no host com `dotnet run`.
 
-- **SDK do .NET 10**
-- **Docker Desktop** (ou daemon equivalente) — SQL Server + RabbitMQ
-- **EF Core CLI**: `dotnet tool install --global dotnet-ef`
-- Um **PAT do GitHub com escopo `read:packages`** — necessário para o restore do `Fcg.Contracts`
-  (o feed NuGet do GitHub Packages exige token **mesmo para pacote público**)
+Secrets **nunca** ficam no repositório — vêm do `.env`/override da infra (no `fcg-ops`) e, no caminho
+de desenvolvimento, dos .NET User Secrets (aplicação).
 
-### 1. Autenticar o feed do `Fcg.Contracts`
+### Subir a plataforma via `fcg-ops` (recomendado)
+
+**Pré-requisitos:** Docker Desktop (ou daemon equivalente). Para `up --build` — construir a imagem a
+partir do código em vez de puxar a imagem pública do GHCR — também um **PAT do GitHub com
+`read:packages`**, porque o `Dockerfile` faz o restore interno do `Fcg.Contracts`.
+
+Clone o `fcg-ops` ao lado deste repositório e, **a partir dele**:
+
+```bash
+cp .env.example .env          # preencha SQLSERVER_SA_PASSWORD, RABBITMQ_USER/PASSWORD, ADMINSEED_PASSWORD
+
+# gere o par RSA e injete a chave privada no override (não-versionado):
+./scripts/gen-rsa-key.sh
+cp docker-compose.override.example.yml docker-compose.override.yml   # cole o PEM PKCS#8 no override
+
+docker compose up -d          # infra + migrations + API + observabilidade
+```
+
+O serviço de migration aplica as migrations e encerra; a API só inicia depois do banco/broker
+`healthy` e da migration concluída, e fica exposta em **`http://localhost:8081`**. Para construir a
+imagem a partir do código deste repo, exporte `GH_TOKEN=<PAT>` e use `docker compose up --build`.
+
+### Desenvolver o serviço (inner loop)
+
+**Pré-requisitos:** SDK do .NET 10, EF Core CLI (`dotnet tool install --global dotnet-ef`), Docker
+(os testes de integração/BDD sobem SQL Server + RabbitMQ via Testcontainers) e um **PAT do GitHub com
+`read:packages`** para o restore do `Fcg.Contracts`.
+
+#### 1. Autenticar o feed do `Fcg.Contracts`
 
 O `nuget.config` registra o source `github-fcg` **sem credenciais** (o token nunca é commitado). Antes do
 primeiro restore local, autentique-o com seu PAT:
@@ -180,51 +205,44 @@ dotnet nuget update source github-fcg \
   --store-password-in-clear-text
 ```
 
-### 2. Variáveis de ambiente do Docker
+#### 2. Rodar os testes (ciclo normal)
 
 ```bash
-cp .env.example .env
-# edite o .env: defina SA_PASSWORD (e credenciais do RabbitMQ, se aplicável)
+dotnet test   # Testcontainers sobe SQL Server + RabbitMQ efêmeros — não precisa de compose
 ```
 
-### 3. Subir SQL Server + RabbitMQ
+Este é o inner loop de quem edita o código: nenhuma infra precisa estar de pé antecipadamente.
 
-```bash
-docker compose up -d
-```
+#### 3. (opcional) A API ao vivo no host
 
-### 4. Gerar a chave RSA
-
-A assinatura é **RS256** — gere o par de chaves com o script `gen-rsa-key.sh` (disponível no repositório
-de operações `fcg-ops`) e copie o **PEM PKCS#8 da chave privada** para o User Secret no passo seguinte.
-
-### 5. Configurar os User Secrets da aplicação
+Para rodar a API fora do container (`dotnet run`), você precisa de SQL Server e RabbitMQ **alcançáveis
+no host**. O compose base do `fcg-ops` mantém esses serviços só na rede interna (não publica `1433`/`5672`)
+— publique as portas via um override local no `fcg-ops` se quiser este fluxo. Em seguida configure os
+User Secrets da aplicação (a connection string aponta para o host/porta que você publicou; abaixo,
+`localhost,1433`):
 
 ```bash
 dotnet user-secrets set "ConnectionStrings:DefaultConnection" \
-  "Server=localhost,1433;Database=identity;User Id=sa;Password=<SA_PASSWORD>;TrustServerCertificate=True;" \
+  "Server=localhost,1433;Database=identity;User Id=sa;Password=<SQLSERVER_SA_PASSWORD>;TrustServerCertificate=True;" \
   --project src/Fcg.Identity.Api
 dotnet user-secrets set "AdminSeed:DefaultPassword" "<SenhaDoAdmin>" --project src/Fcg.Identity.Api
 dotnet user-secrets set "Jwt:RsaPrivateKeyPem" "<PEM-PKCS8-da-chave-privada>" --project src/Fcg.Identity.Api
 dotnet user-secrets set "Jwt:KeyId" "fcg-identity-key-1" --project src/Fcg.Identity.Api
 ```
 
-> A migração para RS256 **removeu** o antigo `Jwt:SigningKey` (HS256). A API valida o PEM no startup e
-> falha imediatamente se ele estiver ausente ou não for importável.
+> A chave RSA é a mesma gerada pelo `gen-rsa-key.sh` do `fcg-ops`. A migração para RS256 **removeu** o
+> antigo `Jwt:SigningKey` (HS256): a API valida o PEM no startup e falha imediatamente se ele estiver
+> ausente ou não for importável.
 
-### 6. Aplicar as migrations
+Aplique as migrations e rode a API:
 
 ```bash
 dotnet ef database update -p src/Fcg.Identity.Infrastructure -s src/Fcg.Identity.Api
-```
-
-### 7. Rodar a API
-
-```bash
 dotnet run --project src/Fcg.Identity.Api
 ```
 
-> Em deploy, as migrations **não** rodam no boot: são aplicadas por um Job dedicado via a flag `--migrate`.
+> Em deploy (e no compose do `fcg-ops`), as migrations **não** rodam no boot da API: são aplicadas por
+> um Job/serviço dedicado via a flag `--migrate`.
 
 ## Rodar os testes
 
