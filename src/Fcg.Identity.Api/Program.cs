@@ -169,9 +169,9 @@ builder
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<IAuthorizationHandler, OwnerOrAdminHandler>();
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy(
+builder
+    .Services.AddAuthorizationBuilder()
+    .AddPolicy(
         "OwnerOrAdmin",
         policy =>
         {
@@ -179,7 +179,6 @@ builder.Services.AddAuthorization(options =>
             policy.AddRequirements(new OwnerOrAdminRequirement(routeParameterName: "id"));
         }
     );
-});
 
 builder.Services.AddInfrastructure(builder.Configuration, builder.Environment);
 builder.Services.AddApplication();
