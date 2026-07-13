@@ -194,9 +194,30 @@ WebApplication app = builder.Build();
 if (args.Contains("--migrate"))
 {
     using IServiceScope migrationScope = app.Services.CreateScope();
-    await migrationScope
-        .ServiceProvider.GetRequiredService<IdentityDbContext>()
-        .Database.MigrateAsync();
+    IdentityDbContext migrationDb =
+        migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
+
+    // O SQL Server aceita conexao no master antes de terminar o recovery dos bancos de
+    // usuario. Migrar nessa janela e fatal: o EF le o banco como inexistente, tenta
+    // CREATE DATABASE e morre no erro 1801 ("database already exists"), que a execution
+    // strategy nao reclassifica como transitorio. Entao espera-se o banco responder de
+    // fato antes de migrar.
+    const int maxTentativas = 30;
+    int tentativa = 0;
+    while (!await migrationDb.Database.CanConnectAsync())
+    {
+        tentativa++;
+        if (tentativa >= maxTentativas)
+        {
+            throw new InvalidOperationException(
+                $"Banco indisponivel apos {maxTentativas} tentativas: nao foi possivel migrar."
+            );
+        }
+
+        await Task.Delay(TimeSpan.FromSeconds(2));
+    }
+
+    await migrationDb.Database.MigrateAsync();
     return;
 }
 

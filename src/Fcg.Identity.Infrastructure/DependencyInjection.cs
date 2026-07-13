@@ -26,7 +26,21 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException(
                 "ConnectionStrings:DefaultConnection não configurada."
             );
-        services.AddDbContext<IdentityDbContext>(options => options.UseSqlServer(connectionString));
+
+        // Retry em falha transitoria: o SQL Server aceita conexao antes de terminar o recovery
+        // dos bancos, entao a primeira conexao (migration, boot em container) pode falhar de
+        // forma transitoria. Sem execution strategy isso vira excecao fatal.
+        services.AddDbContext<IdentityDbContext>(options =>
+            options.UseSqlServer(
+                connectionString,
+                sql =>
+                    sql.EnableRetryOnFailure(
+                        maxRetryCount: 10,
+                        maxRetryDelay: TimeSpan.FromSeconds(5),
+                        errorNumbersToAdd: null
+                    )
+            )
+        );
 
         services.AddIdentityMessaging(configuration);
 
