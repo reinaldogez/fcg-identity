@@ -18,6 +18,7 @@ using Fcg.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenTelemetry.Metrics;
@@ -197,24 +198,39 @@ if (args.Contains("--migrate"))
     IdentityDbContext migrationDb =
         migrationScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
 
-    // O SQL Server aceita conexao no master antes de terminar o recovery dos bancos de
-    // usuario. Migrar nessa janela e fatal: o EF le o banco como inexistente, tenta
-    // CREATE DATABASE e morre no erro 1801 ("database already exists"), que a execution
-    // strategy nao reclassifica como transitorio. Entao espera-se o banco responder de
-    // fato antes de migrar.
+    // A espera resolve contra o catalogo `master`, nunca contra `identity`: em banco zerado o
+    // `identity` so passa a existir depois desta migration, e ate la o SQL Server recusa o login
+    // com o erro 4060 — esperar por ele seria esperar pelo proprio efeito que ainda vai ser
+    // produzido. O `master` sempre existe, entao responder nele e o sinal de que o servidor
+    // terminou de subir e aceita conexao. Nao da para delegar essa espera ao EnableRetryOnFailure:
+    // servidor indisponivel chega como erro 258, que nao esta na lista de transitorios e falha na
+    // primeira tentativa. Depois da espera, o MigrateAsync cria o catalogo e e idempotente.
+    string connectionString =
+        app.Configuration.GetConnectionString("DefaultConnection")
+        ?? throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection não configurada."
+        );
+
+    string masterConnectionString = new SqlConnectionStringBuilder(connectionString)
+    {
+        InitialCatalog = "master",
+    }.ConnectionString;
+
     const int maxTentativas = 30;
     int tentativa = 0;
-    while (!await migrationDb.Database.CanConnectAsync())
+    while (true)
     {
-        tentativa++;
-        if (tentativa >= maxTentativas)
+        try
         {
-            throw new InvalidOperationException(
-                $"Banco indisponivel apos {maxTentativas} tentativas: nao foi possivel migrar."
-            );
+            using var conexao = new SqlConnection(masterConnectionString);
+            await conexao.OpenAsync();
+            break;
         }
-
-        await Task.Delay(TimeSpan.FromSeconds(2));
+        catch (SqlException) when (tentativa < maxTentativas - 1)
+        {
+            tentativa++;
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
 
     await migrationDb.Database.MigrateAsync();
