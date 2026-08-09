@@ -168,7 +168,9 @@ public class CadastrarUsuarioUseCaseTests
         eventoPublicado.UserId.Should().Be(resultado.Id);
         eventoPublicado.Name.Should().Be("João Silva");
         eventoPublicado.Email.Should().Be("joao@email.com");
-        eventoPublicado.OccurredAt.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        eventoPublicado
+            .OccurredAt.Should()
+            .BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
