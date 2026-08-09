@@ -9,6 +9,7 @@
 //  </auto-generated>
 // ------------------------------------------------------------------------------
 #region Designer generated code
+#pragma warning disable
 using Reqnroll;
 namespace Fcg.Identity.Tests.Bdd.Features
 {
@@ -286,4 +287,5 @@ namespace Fcg.Identity.Tests.Bdd.Features
         }
     }
 }
+#pragma warning restore
 #endregion
