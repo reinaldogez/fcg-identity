@@ -239,5 +239,6 @@ app.MapControllers();
 app.MapGraphQL("/graphql");
 app.MapIdentityHealthChecks();
 app.MapJwksEndpoint();
+app.MapOpenIdConfigurationEndpoint();
 
 await app.RunAsync();
