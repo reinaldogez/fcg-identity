@@ -63,7 +63,10 @@ builder
     .ConfigureResource(r => r.AddService(serviceName: "Fcg.Identity.Api", serviceVersion: "1.0.0"))
     .WithTracing(t =>
     {
-        t.AddAspNetCoreInstrumentation().AddSource("MassTransit").AddConsoleExporter();
+        t.AddAspNetCoreInstrumentation()
+            .AddSqlClientInstrumentation()
+            .AddSource("MassTransit")
+            .AddConsoleExporter();
         if (otlpHabilitado)
         {
             t.AddOtlpExporter();
