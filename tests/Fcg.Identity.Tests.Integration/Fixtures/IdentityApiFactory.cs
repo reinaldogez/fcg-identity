@@ -154,10 +154,6 @@ public class IdentityApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
                 config.AddInMemoryCollection(
                     new Dictionary<string, string?>
                     {
-                        ["RateLimit:PermitLimit"] = int.MaxValue.ToString(
-                            CultureInfo.InvariantCulture
-                        ),
-                        ["RateLimit:WindowInSeconds"] = "60",
                         ["RabbitMq:Host"] = brokerUri.Host,
                         ["RabbitMq:Port"] = brokerUri.Port.ToString(CultureInfo.InvariantCulture),
                         ["RabbitMq:Username"] = userInfo[0],

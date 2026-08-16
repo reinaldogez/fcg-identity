@@ -4,13 +4,11 @@ using Fcg.Identity.Application.DTOs;
 using Fcg.Identity.Application.UseCases;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fcg.Identity.Api.Controllers;
 
 [ApiController]
 [Route("api/usuarios")]
-[EnableRateLimiting("fixed")]
 public class UsuarioController(
     CadastrarUsuarioUseCase cadastrarUsuarioUseCase,
     ObterUsuarioPorIdUseCase obterUsuarioPorIdUseCase,
@@ -30,13 +28,11 @@ public class UsuarioController(
     /// <response code="201">Usuário cadastrado com sucesso. O header Location aponta para o recurso criado.</response>
     /// <response code="400">Dados inválidos (e-mail mal formatado, senha fraca ou nome vazio).</response>
     /// <response code="409">E-mail já cadastrado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="500">Erro interno no servidor.</response>
     [HttpPost]
     [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> CadastrarAsync(
         [FromBody] CadastrarUsuarioRequest request,
@@ -59,7 +55,6 @@ public class UsuarioController(
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="404">Usuário não localizado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="500">Erro interno no servidor.</response>
     [HttpGet("{id:guid}", Name = "ObterUsuarioPorId")]
     [Authorize(Policy = "OwnerOrAdmin")]
@@ -67,7 +62,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ObterPorIdAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -90,7 +84,6 @@ public class UsuarioController(
     /// <param name="cancellationToken">Token de cancelamento da requisição.</param>
     /// <response code="200">Lista paginada de usuários.</response>
     /// <response code="400">Parâmetros de paginação inválidos.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Apenas administradores podem listar usuários.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -100,7 +93,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ListarAsync(
         [FromQuery]
@@ -130,7 +122,6 @@ public class UsuarioController(
     /// <response code="400">Dados inválidos (e-mail mal formatado ou nome vazio).</response>
     /// <response code="404">Usuário não localizado.</response>
     /// <response code="409">E-mail já cadastrado por outro usuário.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -142,7 +133,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AtualizarAsync(
         Guid id,
@@ -170,7 +160,6 @@ public class UsuarioController(
     /// <response code="204">Senha alterada com sucesso.</response>
     /// <response code="400">Senha atual incorreta ou nova senha não atende aos requisitos.</response>
     /// <response code="404">Usuário não localizado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Usuário autenticado não é o próprio dono nem administrador.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -181,7 +170,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AlterarSenhaAsync(
         Guid id,
@@ -203,7 +191,6 @@ public class UsuarioController(
     /// <param name="cancellationToken">Token de cancelamento da requisição.</param>
     /// <response code="204">Usuário desativado (ou já estava desativado).</response>
     /// <response code="404">Usuário não localizado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Apenas administradores podem desativar usuários.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -213,7 +200,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> DesativarAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -231,7 +217,6 @@ public class UsuarioController(
     /// <param name="cancellationToken">Token de cancelamento da requisição.</param>
     /// <response code="204">Usuário ativado (ou já estava ativo).</response>
     /// <response code="404">Usuário não localizado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Apenas administradores podem ativar usuários.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -241,7 +226,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AtivarAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -261,7 +245,6 @@ public class UsuarioController(
     /// <response code="200">Tipo alterado com sucesso.</response>
     /// <response code="400">Tipo inválido.</response>
     /// <response code="404">Usuário não localizado.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Apenas administradores podem alterar o tipo de um usuário.</response>
     /// <response code="500">Erro interno no servidor.</response>
@@ -272,7 +255,6 @@ public class UsuarioController(
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> AlterarTipoAsync(
         Guid id,

@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Threading.RateLimiting;
 using Fcg.Identity.Api.Authentication;
 using Fcg.Identity.Api.Authorization;
 using Fcg.Identity.Api.GraphQL;
@@ -17,7 +16,6 @@ using Fcg.Identity.Infrastructure;
 using Fcg.Identity.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -94,51 +92,6 @@ builder.Services.AddOpenApi(options =>
 {
     options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
     options.AddOperationTransformer<AuthorizeOperationTransformer>();
-});
-
-IConfigurationSection rateLimitConfig = builder.Configuration.GetSection("RateLimit");
-builder.Services.AddRateLimiter(options =>
-{
-    int permitLimit = rateLimitConfig.GetValue<int>("PermitLimit");
-    var window = TimeSpan.FromSeconds(rateLimitConfig.GetValue<int>("WindowInSeconds"));
-    options.AddPolicy(
-        "fixed",
-        httpContext =>
-        {
-            string? identity =
-                httpContext.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                ?? httpContext.User.Identity?.Name;
-
-            if (identity != null)
-            {
-                return RateLimitPartition.GetFixedWindowLimiter(
-                    identity,
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = permitLimit,
-                        Window = window,
-                        QueueLimit = 0,
-                    }
-                );
-            }
-
-            string remoteIp =
-                httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-                ?? httpContext.Connection.RemoteIpAddress?.ToString()
-                ?? "anonymous";
-
-            return RateLimitPartition.GetFixedWindowLimiter(
-                remoteIp,
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = permitLimit,
-                    Window = window,
-                    QueueLimit = 0,
-                }
-            );
-        }
-    );
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 });
 
 JwtSettings jwtSettings =
@@ -252,7 +205,6 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
-app.UseRateLimiter();
 app.UseAuthorization();
 app.MapControllers();
 app.MapGraphQL("/graphql");

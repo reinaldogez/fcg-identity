@@ -2,13 +2,11 @@ using Fcg.Identity.Application.DTOs;
 using Fcg.Identity.Application.UseCases.Relatorios;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace Fcg.Identity.Api.Controllers;
 
 [ApiController]
 [Route("api/admin/relatorios")]
-[EnableRateLimiting("fixed")]
 [Authorize(Roles = "Administrador")]
 public class AdminRelatoriosController(ObterRelatorioUsuariosUseCase obterRelatorioUsuariosUseCase)
     : ControllerBase
@@ -24,13 +22,11 @@ public class AdminRelatoriosController(ObterRelatorioUsuariosUseCase obterRelato
     /// <response code="200">Relatório com agregações de usuários.</response>
     /// <response code="401">Requisição sem token ou com token inválido.</response>
     /// <response code="403">Apenas administradores podem acessar relatórios.</response>
-    /// <response code="429">Limite de requisições excedido.</response>
     /// <response code="500">Erro interno no servidor.</response>
     [HttpGet("usuarios")]
     [ProducesResponseType(typeof(RelatorioUsuariosDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public async Task<IActionResult> ObterRelatorioUsuariosAsync(
         CancellationToken cancellationToken
